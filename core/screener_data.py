@@ -35,6 +35,35 @@ SCAN_UNIVERSE = [
 ]
 
 
+def get_ticker_info(ticker: str) -> dict:
+    """Get company name, sector, industry, and description for a ticker."""
+    try:
+        tk = yf.Ticker(ticker)
+        info = tk.info or {}
+        return {
+            "name": info.get("shortName") or info.get("longName") or ticker,
+            "sector": info.get("sector", ""),
+            "industry": info.get("industry", ""),
+            "description": info.get("longBusinessSummary", ""),
+            "market_cap": info.get("marketCap"),
+            "exchange": info.get("exchange", ""),
+        }
+    except Exception as e:
+        logger.warning("Failed to get info for %s: %s", ticker, e)
+        return {"name": ticker, "sector": "", "industry": "", "description": ""}
+
+
+# Cache ticker info to avoid repeated API calls
+_ticker_info_cache: dict[str, dict] = {}
+
+
+def get_ticker_info_cached(ticker: str) -> dict:
+    """Cached version of get_ticker_info."""
+    if ticker not in _ticker_info_cache:
+        _ticker_info_cache[ticker] = get_ticker_info(ticker)
+    return _ticker_info_cache[ticker]
+
+
 def get_quick_stats(ticker: str) -> dict:
     """Get price, change, volume, RSI, 50/200 SMA for a single ticker."""
     try:
@@ -59,8 +88,14 @@ def get_quick_stats(ticker: str) -> dict:
         sma50 = hist["Close"].rolling(50).mean().iloc[-1] if len(hist) >= 50 else None
         sma200 = hist["Close"].rolling(200).mean().iloc[-1] if len(hist) >= 200 else None
 
+        # Get company info
+        info = get_ticker_info_cached(ticker)
+
         return {
             "ticker": ticker,
+            "name": info.get("name", ticker),
+            "sector": info.get("sector", ""),
+            "industry": info.get("industry", ""),
             "price": round(price, 2),
             "change_pct": round(change_pct, 2),
             "volume": int(latest["Volume"]),
@@ -97,8 +132,11 @@ def get_top_movers(n: int = 10) -> dict:
             vol = latest["Volume"]
             avg_vol = df["Volume"].mean()
             vol_ratio = vol / avg_vol if avg_vol > 0 else 1
+            info = get_ticker_info_cached(ticker)
             results.append({
                 "ticker": ticker,
+                "name": info.get("name", ticker),
+                "sector": info.get("sector", ""),
                 "price": round(float(price), 2),
                 "change_pct": round(float(change_pct), 2),
                 "volume": int(vol),

@@ -50,6 +50,14 @@ def render():
     if lookup_btn and lookup_ticker:
         stats = get_quick_stats(lookup_ticker.strip().upper())
         if "error" not in stats:
+            # Company info header
+            name = stats.get("name", stats["ticker"])
+            sector = stats.get("sector", "")
+            industry = stats.get("industry", "")
+            st.markdown(f"**{name}** ({stats['ticker']})")
+            if sector or industry:
+                st.caption(f"{sector}{' · ' + industry if industry else ''}")
+
             c1, c2, c3, c4, c5 = st.columns(5)
             c1.metric("Price", f"${stats['price']}", f"{stats['change_pct']:+.2f}%")
             c2.metric("Volume", f"{stats['volume']:,.0f}")
@@ -96,8 +104,10 @@ def _render_top_movers():
         st.markdown(icon_header("trending-up", "Top Gainers", level=3), unsafe_allow_html=True)
         for item in movers.get("gainers", []):
             with st.container():
-                c1, c2, c3 = st.columns([2, 2, 1])
-                c1.markdown(f"**{item['ticker']}**")
+                c1, c2, c3 = st.columns([3, 2, 1])
+                c1.markdown(f"**{item['ticker']}** · {item.get('name', '')}")
+                if item.get("sector"):
+                    c1.caption(item["sector"])
                 c2.markdown(f"${item['price']} ({item['change_pct']:+.2f}%)")
                 if c3.button("Analyze", key=f"analyze_g_{item['ticker']}", help=f"Analyze {item['ticker']}"):
                     _queue_analysis(item["ticker"])
@@ -107,8 +117,10 @@ def _render_top_movers():
         st.markdown(icon_header("trending-down", "Top Losers", level=3), unsafe_allow_html=True)
         for item in movers.get("losers", []):
             with st.container():
-                c1, c2, c3 = st.columns([2, 2, 1])
-                c1.markdown(f"**{item['ticker']}**")
+                c1, c2, c3 = st.columns([3, 2, 1])
+                c1.markdown(f"**{item['ticker']}** · {item.get('name', '')}")
+                if item.get("sector"):
+                    c1.caption(item["sector"])
                 c2.markdown(f"${item['price']} ({item['change_pct']:+.2f}%)")
                 if c3.button("Analyze", key=f"analyze_l_{item['ticker']}", help=f"Analyze {item['ticker']}"):
                     _queue_analysis(item["ticker"])
@@ -118,8 +130,10 @@ def _render_top_movers():
         st.markdown(icon_header("bar-chart", "Volume Spikes", level=3), unsafe_allow_html=True)
         for item in movers.get("volume", []):
             with st.container():
-                c1, c2, c3 = st.columns([2, 2, 1])
-                c1.markdown(f"**{item['ticker']}**")
+                c1, c2, c3 = st.columns([3, 2, 1])
+                c1.markdown(f"**{item['ticker']}** · {item.get('name', '')}")
+                if item.get("sector"):
+                    c1.caption(item["sector"])
                 c2.markdown(f"{item['vol_ratio']:.1f}x avg vol")
                 if c3.button("Analyze", key=f"analyze_v_{item['ticker']}", help=f"Analyze {item['ticker']}"):
                     _queue_analysis(item["ticker"])
