@@ -4,6 +4,8 @@ __pycache__/
 dist/
 build/
 *.db
+*.db-shm
+*.db-wal
 .streamlit/
 eval_results/
 *.log

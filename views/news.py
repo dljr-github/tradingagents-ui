@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import streamlit as st
 from core.database import get_watchlist
 from core.news import get_news
-from views.icons import icon, page_header
+from views.icons import page_header
 
 
 def _time_ago(published: str) -> str:

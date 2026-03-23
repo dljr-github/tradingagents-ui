@@ -4,7 +4,7 @@ import json
 
 import streamlit as st
 from core.database import get_run, get_runs
-from views.icons import icon, icon_header, page_header
+from views.icons import icon, page_header
 
 
 RATING_COLORS = {

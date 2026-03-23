@@ -1,21 +1,22 @@
 """Screener page — stock discovery, watchlist, top movers, sector heatmap."""
 
-import streamlit as st
 import io
 import csv
+
+import streamlit as st
 
 from core.screener_data import (
     get_quick_stats,
     get_sector_performance,
     get_top_movers,
-    get_price_history,
     get_sector_stocks,
-    get_indicator_series,
-    SECTOR_ETFS,
+    get_ticker_info_cached,
 )
 from core.database import add_to_watchlist, get_watchlist, get_runs, is_in_watchlist, remove_from_watchlist
 from core.runner import get_runner
 from views.icons import page_header
+from views.screener_charts import make_candlestick_chart, make_sparkline
+from views.screener_technical import make_technical_indicators_panel
 
 
 def _queue_analysis(ticker: str):
@@ -25,208 +26,6 @@ def _queue_analysis(ticker: str):
     run_id = runner.submit(ticker, date.today().isoformat())
     st.session_state["last_queued_run"] = run_id
     st.session_state["last_queued_ticker"] = ticker
-
-
-def _make_candlestick_chart(ticker: str):
-    """Render a candlestick chart with SMA overlays and volume bars."""
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-
-    hist = get_price_history(ticker, "1y")
-    if hist.empty:
-        st.caption("No price history available for chart.")
-        return
-
-    # Calculate SMAs
-    hist["SMA50"] = hist["Close"].rolling(50).mean()
-    hist["SMA200"] = hist["Close"].rolling(200).mean()
-
-    fig = make_subplots(
-        rows=2, cols=1, shared_xaxes=True,
-        vertical_spacing=0.03,
-        row_heights=[0.75, 0.25],
-    )
-
-    # Candlestick
-    fig.add_trace(go.Candlestick(
-        x=hist.index, open=hist["Open"], high=hist["High"],
-        low=hist["Low"], close=hist["Close"],
-        increasing_line_color="#00d26a", decreasing_line_color="#ff4757",
-        increasing_fillcolor="#00d26a", decreasing_fillcolor="#ff4757",
-        name="Price",
-    ), row=1, col=1)
-
-    # SMA lines
-    if hist["SMA50"].notna().any():
-        fig.add_trace(go.Scatter(
-            x=hist.index, y=hist["SMA50"],
-            line=dict(color="#00b4d8", width=1.5),
-            name="SMA 50",
-        ), row=1, col=1)
-    if hist["SMA200"].notna().any():
-        fig.add_trace(go.Scatter(
-            x=hist.index, y=hist["SMA200"],
-            line=dict(color="#ffd700", width=1.5),
-            name="SMA 200",
-        ), row=1, col=1)
-
-    # Volume bars — color by direction
-    colors = ["#00d26a" if c >= o else "#ff4757" for c, o in zip(hist["Close"], hist["Open"])]
-    fig.add_trace(go.Bar(
-        x=hist.index, y=hist["Volume"],
-        marker_color=colors, opacity=0.5,
-        name="Volume", showlegend=False,
-    ), row=2, col=1)
-
-    fig.update_layout(
-        plot_bgcolor="#0e1117", paper_bgcolor="#0e1117",
-        font=dict(color="#8b95a5", family="DM Sans, sans-serif"),
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.02,
-            xanchor="left", x=0, font=dict(size=11),
-        ),
-        margin=dict(l=0, r=0, t=30, b=0),
-        height=480,
-        xaxis_rangeslider_visible=False,
-        xaxis2=dict(gridcolor="rgba(255,255,255,0.06)"),
-        yaxis=dict(gridcolor="rgba(255,255,255,0.06)", side="right"),
-        yaxis2=dict(gridcolor="rgba(255,255,255,0.06)", side="right"),
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-
-def _make_sparkline(ticker: str):
-    """Render a small sparkline chart for 1-month price trend."""
-    import plotly.graph_objects as go
-
-    hist = get_price_history(ticker, "1mo")
-    if hist.empty or len(hist) < 2:
-        return
-
-    prices = hist["Close"]
-    color = "#00d26a" if float(prices.iloc[-1]) >= float(prices.iloc[0]) else "#ff4757"
-
-    fig = go.Figure(go.Scatter(
-        x=list(range(len(prices))), y=prices,
-        mode="lines", line=dict(color=color, width=1.5),
-        fill="tozeroy", fillcolor=color.replace(")", ", 0.08)").replace("rgb", "rgba").replace("#00d26a", "rgba(0,210,106,0.08)").replace("#ff4757", "rgba(255,71,87,0.08)"),
-    ))
-    # Simpler fill approach
-    fill_color = "rgba(0,210,106,0.08)" if color == "#00d26a" else "rgba(255,71,87,0.08)"
-    fig.data[0].fillcolor = fill_color
-
-    fig.update_layout(
-        plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=0, r=0, t=0, b=0),
-        height=40, width=120,
-        xaxis=dict(visible=False), yaxis=dict(visible=False),
-        showlegend=False,
-    )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-
-def _make_technical_indicators_panel(ticker: str, stats: dict):
-    """Render MACD chart, Bollinger Bands, and ATR in an expander."""
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-
-    series = get_indicator_series(ticker)
-    if not series:
-        return
-
-    with st.expander("Technical Indicators", expanded=False):
-        # MACD Chart
-        macd_line = series.get("macd_line")
-        signal_line = series.get("signal_line")
-        macd_hist = series.get("macd_histogram")
-
-        if macd_line is not None and not macd_line.empty:
-            st.markdown('<div style="color:var(--text-secondary); font-weight:600; font-size:0.85rem; margin-bottom:4px;">MACD (12, 26, 9)</div>', unsafe_allow_html=True)
-            fig_macd = go.Figure()
-            fig_macd.add_trace(go.Scatter(
-                x=macd_line.index, y=macd_line,
-                line=dict(color="#00b4d8", width=1.5), name="MACD",
-            ))
-            fig_macd.add_trace(go.Scatter(
-                x=signal_line.index, y=signal_line,
-                line=dict(color="#ff8c42", width=1.5), name="Signal",
-            ))
-            hist_colors = ["#00d26a" if v >= 0 else "#ff4757" for v in macd_hist]
-            fig_macd.add_trace(go.Bar(
-                x=macd_hist.index, y=macd_hist,
-                marker_color=hist_colors, name="Histogram", opacity=0.6,
-            ))
-            fig_macd.update_layout(
-                plot_bgcolor="#0e1117", paper_bgcolor="#0e1117",
-                font=dict(color="#8b95a5", family="DM Sans, sans-serif"),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=11)),
-                margin=dict(l=0, r=0, t=10, b=0), height=250,
-                xaxis=dict(gridcolor="rgba(255,255,255,0.06)"),
-                yaxis=dict(gridcolor="rgba(255,255,255,0.06)", side="right"),
-            )
-            st.plotly_chart(fig_macd, use_container_width=True)
-
-        # Bollinger Bands overlaid on price
-        bb_upper = series.get("bb_upper")
-        bb_middle = series.get("bb_middle")
-        bb_lower = series.get("bb_lower")
-
-        if bb_upper is not None and not bb_upper.empty:
-            hist = get_price_history(ticker, "1y")
-            if not hist.empty:
-                st.markdown('<div style="color:var(--text-secondary); font-weight:600; font-size:0.85rem; margin: 8px 0 4px 0;">Bollinger Bands (20, 2)</div>', unsafe_allow_html=True)
-                fig_bb = go.Figure()
-                fig_bb.add_trace(go.Scatter(
-                    x=hist.index, y=hist["Close"],
-                    line=dict(color="#e8eaed", width=1.5), name="Price",
-                ))
-                fig_bb.add_trace(go.Scatter(
-                    x=bb_upper.index, y=bb_upper,
-                    line=dict(color="#00b4d8", width=1, dash="dot"), name="Upper",
-                ))
-                fig_bb.add_trace(go.Scatter(
-                    x=bb_middle.index, y=bb_middle,
-                    line=dict(color="#ffd700", width=1), name="Middle",
-                ))
-                fig_bb.add_trace(go.Scatter(
-                    x=bb_lower.index, y=bb_lower,
-                    line=dict(color="#00b4d8", width=1, dash="dot"), name="Lower",
-                    fill="tonexty", fillcolor="rgba(0,180,216,0.05)",
-                ))
-                fig_bb.update_layout(
-                    plot_bgcolor="#0e1117", paper_bgcolor="#0e1117",
-                    font=dict(color="#8b95a5", family="DM Sans, sans-serif"),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=11)),
-                    margin=dict(l=0, r=0, t=10, b=0), height=280,
-                    xaxis=dict(gridcolor="rgba(255,255,255,0.06)"),
-                    yaxis=dict(gridcolor="rgba(255,255,255,0.06)", side="right"),
-                )
-                st.plotly_chart(fig_bb, use_container_width=True)
-
-        # ATR value display
-        atr = stats.get("atr")
-        if atr is not None:
-            st.markdown(f"""
-            <div class="stat-grid" style="margin: 8px 0;">
-                <div class="stat-item">
-                    <div class="stat-label">ATR (14)</div>
-                    <div class="stat-value">${atr}</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">MACD</div>
-                    <div class="stat-value">{stats.get('macd_line', 'N/A')}</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">BB Upper</div>
-                    <div class="stat-value">${stats.get('bb_upper', 'N/A')}</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">BB Lower</div>
-                    <div class="stat-value">${stats.get('bb_lower', 'N/A')}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
 
 
 def _render_analysis_history(ticker: str):
@@ -271,7 +70,6 @@ def _get_earnings_days(ticker: str) -> int | None:
         cal = tk.calendar
         if cal is None or cal.empty:
             return None
-        # calendar may be a DataFrame with 'Earnings Date' row or column
         earnings_date = None
         if hasattr(cal, "loc"):
             if "Earnings Date" in cal.index:
@@ -379,10 +177,10 @@ def render():
                 st.success(f"Analysis queued for {lookup_ticker.upper()}! Go to Analysis page to monitor.")
 
             # Candlestick price chart
-            _make_candlestick_chart(lookup_ticker.strip().upper())
+            make_candlestick_chart(lookup_ticker.strip().upper())
 
             # Technical indicators panel
-            _make_technical_indicators_panel(lookup_ticker.strip().upper(), stats)
+            make_technical_indicators_panel(lookup_ticker.strip().upper(), stats)
 
             # Analysis history for this ticker
             _render_analysis_history(lookup_ticker.strip().upper())
@@ -408,27 +206,23 @@ def render():
         _render_watchlist()
 
 
-
 def _render_mover_tab(items: list, accent: str, value_fn, key_prefix: str):
     """Render a single mover tab with full-width rows, Analyze and Watch buttons."""
     if not items:
         st.caption("No data available.")
         return
 
-    # Table header
     value_cls = "positive" if accent == "green" else "negative" if accent == "red" else "neutral"
     hdr1, hdr2, hdr3, hdr4, hdr5 = st.columns([1, 5, 2, 1, 1])
     hdr1.markdown('<span style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em;">Ticker</span>', unsafe_allow_html=True)
     hdr2.markdown('<span style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em;">Company</span>', unsafe_allow_html=True)
     hdr3.markdown('<span style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em;">Price / Change</span>', unsafe_allow_html=True)
-    # hdr4 and hdr5 are icon buttons, no headers needed
     st.markdown('<hr style="margin:4px 0; border-color:var(--border-medium);">', unsafe_allow_html=True)
 
     for i, item in enumerate(items):
         name = item.get("name", "")
         sector = item.get("sector", "")
         ticker = item["ticker"]
-        bg = "var(--bg-card)" if i % 2 == 1 else "transparent"
 
         c_tick, c_name, c_price, c_btn1, c_btn2 = st.columns([1, 5, 2, 1, 1])
         with c_tick:
@@ -510,7 +304,6 @@ def _render_sectors():
         st.info("No sector data available.")
         return
 
-    # ── Sector bar chart ──
     import plotly.graph_objects as go
 
     sector_names = [s["sector"] for s in sectors]
@@ -541,7 +334,7 @@ def _render_sectors():
 
     st.divider()
 
-    # ── Sector cards with expandable drill-down ──
+    # Sector cards with expandable drill-down
     cols = st.columns(4)
     for i, s in enumerate(sectors):
         col = cols[i % 4]
@@ -582,7 +375,6 @@ def _render_sectors():
                             f'</div>',
                             unsafe_allow_html=True,
                         )
-                    # Analyze top mover button
                     top_ticker = stocks[0]["ticker"]
                     if st.button(f"Analyze {top_ticker}", key=f"analyze_sector_{s['etf']}", use_container_width=True):
                         _queue_analysis(top_ticker)
@@ -592,8 +384,6 @@ def _render_sectors():
 
 
 def _render_watchlist():
-    from core.screener_data import get_ticker_info_cached, get_quick_stats
-
     wl = get_watchlist()
     if not wl:
         st.info("Your watchlist is empty. Add tickers using the search above.")
@@ -627,7 +417,7 @@ def _render_watchlist():
                         earnings_badge = f'<div style="color:#ffd700; font-size:0.72rem; font-weight:600; margin-top:2px;">Earnings in {earnings_days} day{"s" if earnings_days != 1 else ""}</div>'
                     st.markdown(f'<div style="text-align:right; font-family:var(--font-mono);"><div style="font-weight:600; font-size:1rem;">${stats["price"]}</div><div style="color:{chg_color}; font-size:0.85rem;">{change:+.2f}%</div>{earnings_badge}</div>', unsafe_allow_html=True)
             with col_spark:
-                _make_sparkline(item["ticker"])
+                make_sparkline(item["ticker"])
 
             # Row 2: action buttons
             c1, c2 = st.columns([1, 1])

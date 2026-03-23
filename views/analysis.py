@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 import streamlit as st
 from core.config import load_config
-from core.database import get_active_runs, get_run
+from core.database import get_active_runs
 from core.runner import get_runner, read_progress
 from views.icons import icon, icon_header, page_header
 
