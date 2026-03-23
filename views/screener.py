@@ -411,37 +411,26 @@ def _render_watchlist():
         industry = info.get("industry", "")
 
         # Get price data
-        price_html = ""
-        notes = item.get("notes")
-        if notes:
-            price_html = f'<div style="color: var(--text-secondary); font-size: 0.85rem;">{notes}</div>'
-        else:
-            stats = get_quick_stats(item["ticker"])
-            if "error" not in stats:
-                change = stats["change_pct"]
-                delta_class = "positive" if change > 0 else "negative" if change < 0 else ""
-                price_html = f"""
-                <div style="text-align: right;">
-                    <div class="card-value" style="font-size: 1.1rem;">${stats['price']}</div>
-                    <div class="stat-delta {delta_class}">{change:+.2f}%</div>
-                </div>"""
+        stats = get_quick_stats(item["ticker"])
+        has_price = "error" not in stats
 
         with st.container(border=True):
-            col_info, col_spark = st.columns([4, 1])
-            with col_info:
-                st.markdown(f"""
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span class="card-ticker">{item['ticker']}</span>
-                        {f'<span class="card-name" style="margin-left: 8px;">{name}</span>' if name else ''}
-                        {f'<div class="card-sector">{sector}{" &middot; " + industry if industry else ""}</div>' if sector or industry else ''}
-                    </div>
-                    {price_html}
-                </div>
-                """, unsafe_allow_html=True)
+            # Row 1: ticker info + price + sparkline
+            col_ticker, col_company, col_price, col_spark = st.columns([1, 4, 2, 2])
+            with col_ticker:
+                st.markdown(f'<span style="font-family:var(--font-mono); font-weight:700; font-size:1rem; color:var(--text-primary);">{item["ticker"]}</span>', unsafe_allow_html=True)
+            with col_company:
+                sector_line = f'<span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;"> · {sector}{"/" + industry if industry else ""}</span>' if sector else ""
+                st.markdown(f'<span style="color:var(--text-secondary); font-size:0.85rem;">{name}{sector_line}</span>', unsafe_allow_html=True)
+            with col_price:
+                if has_price:
+                    change = stats["change_pct"]
+                    chg_color = "var(--green)" if change > 0 else "var(--red)" if change < 0 else "var(--text-secondary)"
+                    st.markdown(f'<div style="text-align:right; font-family:var(--font-mono);"><div style="font-weight:600; font-size:1rem;">${stats["price"]}</div><div style="color:{chg_color}; font-size:0.85rem;">{change:+.2f}%</div></div>', unsafe_allow_html=True)
             with col_spark:
                 _make_sparkline(item["ticker"])
 
+            # Row 2: action buttons
             c1, c2 = st.columns([1, 1])
             if c1.button("Analyze", key=f"analyze_wl_{item['ticker']}", help=f"Analyze {item['ticker']}", use_container_width=True):
                 _queue_analysis(item["ticker"])
