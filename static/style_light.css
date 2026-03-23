@@ -12,8 +12,18 @@
         --text-muted: #8a8ca5;
         --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
         --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.1);
+        --green-dim: rgba(0, 160, 80, 0.10);
+        --green-glow: rgba(0, 160, 80, 0.2);
+        --red-dim: rgba(220, 50, 60, 0.10);
+        --red-glow: rgba(220, 50, 60, 0.2);
+        --cyan-dim: rgba(0, 140, 180, 0.10);
+        --gold-dim: rgba(200, 170, 0, 0.10);
     }
+
+    /* ── App background ───────────────────────────────────────────────── */
     .stApp { background: var(--bg-primary); }
+
+    /* ── Sidebar ──────────────────────────────────────────────────────── */
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #f0f1f5 0%, #e8e9ed 100%);
         border-right: 1px solid var(--border-subtle);
@@ -25,6 +35,8 @@
         background: var(--bg-card);
         color: var(--text-primary);
     }
+
+    /* ── Buttons ──────────────────────────────────────────────────────── */
     .stButton > button {
         background: var(--bg-card);
         color: var(--text-primary);
@@ -34,6 +46,12 @@
         background: var(--bg-elevated);
         color: var(--green);
     }
+    .stFormSubmitButton > button,
+    button[kind="primaryFormSubmit"] {
+        color: #ffffff !important;
+    }
+
+    /* ── Inputs ───────────────────────────────────────────────────────── */
     .stTextInput > div > div > input,
     .stSelectbox > div > div,
     .stMultiSelect > div > div,
@@ -43,10 +61,28 @@
         color: var(--text-primary) !important;
         border: 1px solid var(--border-medium) !important;
     }
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus {
+        border-color: var(--cyan) !important;
+        box-shadow: 0 0 0 2px var(--cyan-dim) !important;
+    }
     .stTextInput label, .stSelectbox label, .stMultiSelect label,
     .stDateInput label, .stNumberInput label, .stSlider label {
         color: var(--text-secondary) !important;
     }
+    /* Dropdown menu */
+    [data-baseweb="popover"], [data-baseweb="menu"] {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-medium) !important;
+    }
+    [data-baseweb="menu"] li {
+        color: var(--text-primary) !important;
+    }
+    [data-baseweb="menu"] li:hover {
+        background: var(--bg-elevated) !important;
+    }
+
+    /* ── Tabs ─────────────────────────────────────────────────────────── */
     .stTabs [data-baseweb="tab-list"] {
         background: var(--bg-secondary);
     }
@@ -61,6 +97,269 @@
         background: var(--bg-card) !important;
         color: var(--green) !important;
     }
+    /* Tab panel backgrounds */
+    .stTabs [data-baseweb="tab-panel"] {
+        background: transparent;
+    }
+
+    /* ── Typography ───────────────────────────────────────────────────── */
     p, span, div, label { color: var(--text-primary); }
     h1, h2, h3, h4, h5, h6 { color: var(--text-primary); }
+    .stCaption, small, .stCaption p {
+        color: var(--text-secondary) !important;
+    }
+
+    /* ── Expanders ────────────────────────────────────────────────────── */
+    .streamlit-expanderHeader,
+    details[data-testid="stExpander"] summary,
+    [data-testid="stExpander"] summary {
+        background: var(--bg-card) !important;
+        color: var(--text-secondary) !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: 6px !important;
+    }
+    .streamlit-expanderHeader:hover,
+    details[data-testid="stExpander"] summary:hover,
+    [data-testid="stExpander"] summary:hover {
+        background: var(--bg-card-hover) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--border-medium) !important;
+    }
+    .streamlit-expanderContent,
+    details[data-testid="stExpander"] > div[data-testid="stExpanderDetails"],
+    [data-testid="stExpander"] > div {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-top: none !important;
+        border-radius: 0 0 6px 6px !important;
+    }
+    /* Expander SVG arrow icon */
+    [data-testid="stExpander"] summary svg {
+        color: var(--text-muted) !important;
+        fill: var(--text-muted) !important;
+    }
+
+    /* ── Cards / Bordered containers ─────────────────────────────────── */
+    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"] {
+        border: 1px solid var(--border-subtle) !important;
+        background: var(--bg-card) !important;
+        box-shadow: var(--shadow-card);
+    }
+    div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+        border-color: var(--border-medium) !important;
+        background: var(--bg-card-hover) !important;
+    }
+
+    /* ── Metrics ──────────────────────────────────────────────────────── */
+    div[data-testid="stMetric"] {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+    }
+    div[data-testid="stMetric"]:hover {
+        border-color: var(--border-medium);
+        box-shadow: var(--shadow-elevated);
+    }
+    div[data-testid="stMetric"] label {
+        color: var(--text-muted) !important;
+    }
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: var(--text-primary) !important;
+    }
+
+    /* ── Plotly chart containers ──────────────────────────────────────── */
+    .stPlotlyChart {
+        background: transparent;
+        border-radius: 10px;
+    }
+    .stPlotlyChart > div {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    /* Plotly modebar (toolbar) in light mode */
+    .stPlotlyChart .modebar {
+        background: transparent !important;
+    }
+    .stPlotlyChart .modebar-btn path {
+        fill: var(--text-muted) !important;
+    }
+    .stPlotlyChart .modebar-btn:hover path {
+        fill: var(--text-primary) !important;
+    }
+
+    /* ── Alert boxes (info / warning / success / error) ──────────────── */
+    .stAlert,
+    div[data-testid="stAlert"] {
+        border-radius: 10px !important;
+        border: 1px solid var(--border-subtle) !important;
+    }
+    /* Info */
+    .stAlert [data-testid="stAlertContentInfo"],
+    div[role="alert"][data-baseweb="notification"]:not([kind]) {
+        background: rgba(0, 140, 180, 0.08) !important;
+        color: var(--text-primary) !important;
+    }
+    /* Warning */
+    div[data-testid="stAlert"] [data-baseweb="notification"][kind="warning"],
+    .element-container .stAlert:has(svg[data-testid="stIconWarning"]) {
+        background: rgba(200, 170, 0, 0.08) !important;
+        color: var(--text-primary) !important;
+    }
+    /* Success */
+    div[data-testid="stAlert"] [data-baseweb="notification"][kind="positive"],
+    .element-container .stAlert:has(svg[data-testid="stIconSuccess"]) {
+        background: rgba(0, 160, 80, 0.08) !important;
+        color: var(--text-primary) !important;
+    }
+    /* Error */
+    div[data-testid="stAlert"] [data-baseweb="notification"][kind="negative"],
+    .element-container .stAlert:has(svg[data-testid="stIconError"]) {
+        background: rgba(220, 50, 60, 0.08) !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* ── Toast notifications ──────────────────────────────────────────── */
+    [data-testid="stToast"] {
+        background: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-medium) !important;
+        box-shadow: var(--shadow-elevated) !important;
+    }
+
+    /* ── Progress bar ────────────────────────────────────────────────── */
+    .stProgress > div > div {
+        background: var(--bg-elevated) !important;
+    }
+
+    /* ── Dividers ────────────────────────────────────────────────────── */
+    hr {
+        border-color: var(--border-subtle) !important;
+    }
+
+    /* ── Dataframe / table ───────────────────────────────────────────── */
+    .stDataFrame {
+        border: 1px solid var(--border-subtle);
+    }
+    .stDataFrame [data-testid="glideDataEditor"] {
+        background: var(--bg-card) !important;
+    }
+
+    /* ── Scrollbar ───────────────────────────────────────────────────── */
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: var(--bg-elevated); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ── Pipeline node light adjustments ──────────────────────────────── */
+    .pipeline-node.done { color: #ffffff; }
+    .pipeline-node.active { color: #ffffff; }
+    .pipeline-node.pending {
+        background: var(--bg-elevated);
+        color: var(--text-muted);
+        border: 1px solid var(--border-medium);
+    }
+
+    /* ── Custom card overrides ───────────────────────────────────────── */
+    .ta-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+    }
+    .ta-card:hover {
+        border-color: var(--border-medium);
+        background: var(--bg-card-hover);
+    }
+
+    /* ── Stat grid items ─────────────────────────────────────────────── */
+    .stat-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+    }
+    .stat-item:hover {
+        border-color: var(--border-medium);
+    }
+
+    /* ── Sector cards ────────────────────────────────────────────────── */
+    .sector-card {
+        border: 1px solid var(--border-subtle);
+    }
+    .sector-card:hover {
+        box-shadow: var(--shadow-elevated);
+    }
+
+    /* ── Debate panels ───────────────────────────────────────────────── */
+    .debate-bull {
+        background: linear-gradient(135deg, rgba(0, 160, 80, 0.06) 0%, rgba(0, 160, 80, 0.02) 100%);
+        border-color: rgba(0, 160, 80, 0.2);
+    }
+    .debate-bear {
+        background: linear-gradient(135deg, rgba(220, 50, 60, 0.06) 0%, rgba(220, 50, 60, 0.02) 100%);
+        border-color: rgba(220, 50, 60, 0.2);
+    }
+
+    /* ── Run status card ─────────────────────────────────────────────── */
+    .run-status-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-card);
+    }
+
+    /* ── Filter bar ──────────────────────────────────────────────────── */
+    .filter-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+    }
+
+    /* ── Report content ──────────────────────────────────────────────── */
+    .report-content code {
+        background: var(--bg-elevated);
+    }
+
+    /* ── Verdict card ────────────────────────────────────────────────── */
+    .verdict-card {
+        background: linear-gradient(135deg, rgba(0, 140, 180, 0.06) 0%, rgba(0, 140, 180, 0.02) 100%);
+        border: 1px solid rgba(0, 140, 180, 0.2);
+    }
+
+    /* ── Movers table rows ───────────────────────────────────────────── */
+    .mover-tbl-row:hover {
+        background: var(--bg-card-hover);
+    }
+    .mover-tbl-row-alt {
+        background: var(--bg-card);
+    }
+    .mover-tbl-row-alt:hover {
+        background: var(--bg-card-hover);
+    }
+
+    /* ── Spinner ──────────────────────────────────────────────────────── */
+    .stSpinner > div {
+        border-top-color: var(--green) !important;
+    }
+
+    /* ── Form borders ────────────────────────────────────────────────── */
+    [data-testid="stForm"] {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-subtle) !important;
+        border-radius: 10px !important;
+        padding: 16px !important;
+    }
+
+    /* ── Download button ─────────────────────────────────────────────── */
+    .stDownloadButton > button {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-medium);
+    }
+    .stDownloadButton > button:hover {
+        background: var(--bg-elevated);
+        color: var(--green);
+    }
+
+    /* ── Sidebar branding ────────────────────────────────────────────── */
+    .sidebar-brand .brand-text {
+        color: var(--text-primary);
+    }
+    .sidebar-brand .brand-sub {
+        color: var(--text-muted);
+    }
     </style>

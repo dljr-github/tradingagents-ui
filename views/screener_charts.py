@@ -2,6 +2,7 @@
 
 import streamlit as st
 from core.screener_data import get_price_history
+from core.theme import get_plotly_theme, get_text_color
 
 
 def make_candlestick_chart(ticker: str):
@@ -55,9 +56,10 @@ def make_candlestick_chart(ticker: str):
         name="Volume", showlegend=False,
     ), row=2, col=1)
 
+    theme = get_plotly_theme()
     fig.update_layout(
-        plot_bgcolor="#0e1117", paper_bgcolor="#0e1117",
-        font=dict(color="#8b95a5", family="DM Sans, sans-serif"),
+        plot_bgcolor=theme["plot_bgcolor"], paper_bgcolor=theme["paper_bgcolor"],
+        font=theme["font"],
         legend=dict(
             orientation="h", yanchor="bottom", y=1.02,
             xanchor="left", x=0, font=dict(size=11),
@@ -65,9 +67,9 @@ def make_candlestick_chart(ticker: str):
         margin=dict(l=0, r=0, t=30, b=0),
         height=480,
         xaxis_rangeslider_visible=False,
-        xaxis2=dict(gridcolor="rgba(255,255,255,0.06)"),
-        yaxis=dict(gridcolor="rgba(255,255,255,0.06)", side="right"),
-        yaxis2=dict(gridcolor="rgba(255,255,255,0.06)", side="right"),
+        xaxis2=dict(gridcolor=theme["gridcolor"]),
+        yaxis=dict(gridcolor=theme["gridcolor"], side="right"),
+        yaxis2=dict(gridcolor=theme["gridcolor"], side="right"),
     )
 
     st.plotly_chart(fig, use_container_width=True)

@@ -2,6 +2,7 @@
 
 import streamlit as st
 from core.screener_data import get_indicator_series, get_price_history
+from core.theme import get_plotly_theme, get_text_color
 
 
 def make_technical_indicators_panel(ticker: str, stats: dict):
@@ -34,13 +35,14 @@ def make_technical_indicators_panel(ticker: str, stats: dict):
                 x=macd_hist.index, y=macd_hist,
                 marker_color=hist_colors, name="Histogram", opacity=0.6,
             ))
+            theme = get_plotly_theme()
             fig_macd.update_layout(
-                plot_bgcolor="#0e1117", paper_bgcolor="#0e1117",
-                font=dict(color="#8b95a5", family="DM Sans, sans-serif"),
+                plot_bgcolor=theme["plot_bgcolor"], paper_bgcolor=theme["paper_bgcolor"],
+                font=theme["font"],
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=11)),
                 margin=dict(l=0, r=0, t=10, b=0), height=250,
-                xaxis=dict(gridcolor="rgba(255,255,255,0.06)"),
-                yaxis=dict(gridcolor="rgba(255,255,255,0.06)", side="right"),
+                xaxis=dict(gridcolor=theme["gridcolor"]),
+                yaxis=dict(gridcolor=theme["gridcolor"], side="right"),
             )
             st.plotly_chart(fig_macd, use_container_width=True)
 
@@ -56,7 +58,7 @@ def make_technical_indicators_panel(ticker: str, stats: dict):
                 fig_bb = go.Figure()
                 fig_bb.add_trace(go.Scatter(
                     x=hist.index, y=hist["Close"],
-                    line=dict(color="#e8eaed", width=1.5), name="Price",
+                    line=dict(color=get_text_color(), width=1.5), name="Price",
                 ))
                 fig_bb.add_trace(go.Scatter(
                     x=bb_upper.index, y=bb_upper,
@@ -72,12 +74,12 @@ def make_technical_indicators_panel(ticker: str, stats: dict):
                     fill="tonexty", fillcolor="rgba(0,180,216,0.05)",
                 ))
                 fig_bb.update_layout(
-                    plot_bgcolor="#0e1117", paper_bgcolor="#0e1117",
-                    font=dict(color="#8b95a5", family="DM Sans, sans-serif"),
+                    plot_bgcolor=theme["plot_bgcolor"], paper_bgcolor=theme["paper_bgcolor"],
+                    font=theme["font"],
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=11)),
                     margin=dict(l=0, r=0, t=10, b=0), height=280,
-                    xaxis=dict(gridcolor="rgba(255,255,255,0.06)"),
-                    yaxis=dict(gridcolor="rgba(255,255,255,0.06)", side="right"),
+                    xaxis=dict(gridcolor=theme["gridcolor"]),
+                    yaxis=dict(gridcolor=theme["gridcolor"], side="right"),
                 )
                 st.plotly_chart(fig_bb, use_container_width=True)
 

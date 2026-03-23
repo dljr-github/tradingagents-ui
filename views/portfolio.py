@@ -3,6 +3,7 @@
 from datetime import date
 
 import streamlit as st
+from core.theme import get_plotly_theme
 from core.portfolio import (
     add_position,
     get_positions,
@@ -231,10 +232,11 @@ def _render_allocation_chart(stats: list[dict]):
         hovertemplate="<b>%{label}</b><br>$%{value:,.2f}<br>%{percent}<extra></extra>",
     ))
 
+    theme = get_plotly_theme()
     fig.update_layout(
-        plot_bgcolor="#0e1117",
-        paper_bgcolor="#0e1117",
-        font=dict(color="#8b95a5", family="DM Sans, sans-serif"),
+        plot_bgcolor=theme["plot_bgcolor"],
+        paper_bgcolor=theme["paper_bgcolor"],
+        font=theme["font"],
         margin=dict(l=0, r=0, t=20, b=20),
         height=360,
         showlegend=True,

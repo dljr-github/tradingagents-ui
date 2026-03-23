@@ -14,6 +14,7 @@ from core.screener_data import (
 )
 from core.database import add_to_watchlist, get_watchlist, get_runs, is_in_watchlist, remove_from_watchlist
 from core.runner import get_runner
+from core.theme import get_plotly_theme, get_muted_color
 from views.icons import page_header
 from views.screener_charts import make_candlestick_chart, make_sparkline
 from views.screener_technical import make_technical_indicators_panel
@@ -42,7 +43,7 @@ def _render_analysis_history(ticker: str):
     with st.expander(f"Analysis History ({len(past_runs)} past runs)", expanded=False):
         for r in past_runs:
             rating = (r.get("rating") or "N/A").upper()
-            color = rating_colors.get(rating, "#8b95a5")
+            color = rating_colors.get(rating, get_muted_color())
             decision = r.get("final_decision", "") or ""
             brief = decision[:120].replace("\n", " ") + ("..." if len(decision) > 120 else "")
             st.markdown(
@@ -310,22 +311,23 @@ def _render_sectors():
     changes = [s["change_pct"] for s in sectors]
     bar_colors = ["#00d26a" if c >= 0 else "#ff4757" for c in changes]
 
+    theme = get_plotly_theme()
     fig = go.Figure(go.Bar(
         x=sector_names, y=changes,
         marker_color=bar_colors,
         text=[f"{c:+.2f}%" for c in changes],
         textposition="outside",
-        textfont=dict(color="#8b95a5", size=11),
+        textfont=dict(color=get_muted_color(), size=11),
     ))
     fig.update_layout(
-        plot_bgcolor="#0e1117", paper_bgcolor="#0e1117",
-        font=dict(color="#8b95a5", family="DM Sans, sans-serif"),
+        plot_bgcolor=theme["plot_bgcolor"], paper_bgcolor=theme["paper_bgcolor"],
+        font=theme["font"],
         margin=dict(l=0, r=0, t=20, b=0),
         height=280,
-        xaxis=dict(tickangle=-45, gridcolor="rgba(255,255,255,0.06)"),
+        xaxis=dict(tickangle=-45, gridcolor=theme["gridcolor"]),
         yaxis=dict(
-            gridcolor="rgba(255,255,255,0.06)",
-            zeroline=True, zerolinecolor="rgba(255,255,255,0.15)",
+            gridcolor=theme["gridcolor"],
+            zeroline=True, zerolinecolor=theme["zerolinecolor"],
             title="Change %",
         ),
         showlegend=False,
