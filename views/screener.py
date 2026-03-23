@@ -4,7 +4,7 @@ import streamlit as st
 from core.screener_data import get_quick_stats, get_sector_performance, get_top_movers
 from core.database import add_to_watchlist, get_watchlist, is_in_watchlist, remove_from_watchlist
 from core.runner import get_runner
-from views.icons import icon, icon_header, page_header
+from views.icons import page_header
 
 
 def _queue_analysis(ticker: str):
@@ -19,8 +19,8 @@ def _queue_analysis(ticker: str):
 def render():
     st.markdown(page_header("chart", "Stock Screener", "Market Discovery & Watchlist"), unsafe_allow_html=True)
 
-    # Quick ticker lookup
-    col1, col2, col3 = st.columns([3, 1, 1])
+    # Quick ticker lookup — wider input, buttons stay on one line
+    col1, col2, col3 = st.columns([5, 1, 2])
     with col1:
         lookup_ticker = st.text_input("Look up ticker", placeholder="e.g. AAPL", key="screener_lookup")
     with col2:
@@ -116,24 +116,41 @@ def render():
         _render_watchlist()
 
 
-def _mover_card(item: dict, accent: str, value_text: str) -> str:
-    """Generate HTML for a single mover card."""
-    name = item.get("name", "")
-    sector = item.get("sector", "")
-    return f"""
-    <div class="ta-card ta-card-accent-{accent}">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <span class="card-ticker">{item['ticker']}</span>
-                {f'<span class="card-name" style="margin-left: 6px;">{name}</span>' if name else ''}
-                {f'<div class="card-sector">{sector}</div>' if sector else ''}
-            </div>
-            <div style="text-align: right;">
-                <div class="card-value {'positive' if accent == 'green' else 'negative' if accent == 'red' else 'neutral'}">{value_text}</div>
-            </div>
-        </div>
-    </div>
-    """
+
+def _render_mover_tab(items: list, accent: str, value_fn, key_prefix: str):
+    """Render a single mover tab with full-width rows and inline Analyze buttons."""
+    if not items:
+        st.caption("No data available.")
+        return
+
+    # Table header
+    value_cls = "positive" if accent == "green" else "negative" if accent == "red" else "neutral"
+    st.markdown("""
+    <div class="mover-tbl-header">
+        <div class="mover-tbl-ticker">Ticker</div>
+        <div class="mover-tbl-company">Company</div>
+        <div class="mover-tbl-sector">Sector</div>
+        <div class="mover-tbl-value">Price / Change</div>
+    </div>""", unsafe_allow_html=True)
+
+    for i, item in enumerate(items):
+        name = item.get("name", "")
+        sector = item.get("sector", "")
+        row_class = "mover-tbl-row-alt" if i % 2 == 1 else ""
+
+        col_info, col_btn = st.columns([8, 2], gap="small")
+        with col_info:
+            st.markdown(f"""
+            <div class="mover-tbl-row {row_class} accent-{accent}">
+                <div class="mover-tbl-ticker">{item['ticker']}</div>
+                <div class="mover-tbl-company">{name or '—'}</div>
+                <div class="mover-tbl-sector">{sector or '—'}</div>
+                <div class="mover-tbl-value {value_cls}">{value_fn(item)}</div>
+            </div>""", unsafe_allow_html=True)
+        with col_btn:
+            if st.button("Analyze", key=f"analyze_{key_prefix}_{item['ticker']}", help=f"Analyze {item['ticker']}", use_container_width=True):
+                _queue_analysis(item["ticker"])
+                st.toast(f"Analysis queued for {item['ticker']}")
 
 
 def _render_top_movers():
@@ -144,40 +161,32 @@ def _render_top_movers():
         st.info("No market data available. Markets may be closed.")
         return
 
-    col_gain, col_lose, col_vol = st.columns(3)
+    tab_gain, tab_lose, tab_vol = st.tabs([
+        "Top Gainers",
+        "Top Losers",
+        "Volume Spikes",
+    ])
 
-    with col_gain:
-        st.markdown(icon_header("trending-up", "Top Gainers", level=3), unsafe_allow_html=True)
-        for item in movers.get("gainers", []):
-            st.markdown(
-                _mover_card(item, "green", f"${item['price']} ({item['change_pct']:+.2f}%)"),
-                unsafe_allow_html=True,
-            )
-            if st.button("Analyze", key=f"analyze_g_{item['ticker']}", help=f"Analyze {item['ticker']}"):
-                _queue_analysis(item["ticker"])
-                st.toast(f"Analysis queued for {item['ticker']}")
+    with tab_gain:
+        _render_mover_tab(
+            movers.get("gainers", []), "green",
+            lambda x: f"${x['price']}  <span class='mover-tbl-change positive'>{x['change_pct']:+.2f}%</span>",
+            "g",
+        )
 
-    with col_lose:
-        st.markdown(icon_header("trending-down", "Top Losers", level=3), unsafe_allow_html=True)
-        for item in movers.get("losers", []):
-            st.markdown(
-                _mover_card(item, "red", f"${item['price']} ({item['change_pct']:+.2f}%)"),
-                unsafe_allow_html=True,
-            )
-            if st.button("Analyze", key=f"analyze_l_{item['ticker']}", help=f"Analyze {item['ticker']}"):
-                _queue_analysis(item["ticker"])
-                st.toast(f"Analysis queued for {item['ticker']}")
+    with tab_lose:
+        _render_mover_tab(
+            movers.get("losers", []), "red",
+            lambda x: f"${x['price']}  <span class='mover-tbl-change negative'>{x['change_pct']:+.2f}%</span>",
+            "l",
+        )
 
-    with col_vol:
-        st.markdown(icon_header("bar-chart", "Volume Spikes", level=3), unsafe_allow_html=True)
-        for item in movers.get("volume", []):
-            st.markdown(
-                _mover_card(item, "cyan", f"{item['vol_ratio']:.1f}x avg vol"),
-                unsafe_allow_html=True,
-            )
-            if st.button("Analyze", key=f"analyze_v_{item['ticker']}", help=f"Analyze {item['ticker']}"):
-                _queue_analysis(item["ticker"])
-                st.toast(f"Analysis queued for {item['ticker']}")
+    with tab_vol:
+        _render_mover_tab(
+            movers.get("volume", []), "cyan",
+            lambda x: f"{x['vol_ratio']:.1f}x avg vol",
+            "v",
+        )
 
 
 def _render_sectors():
@@ -245,8 +254,8 @@ def _render_watchlist():
                     <div class="stat-delta {delta_class}">{change:+.2f}%</div>
                 </div>"""
 
-        st.markdown(f"""
-        <div class="ta-card">
+        with st.container(border=True):
+            st.markdown(f"""
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <span class="card-ticker">{item['ticker']}</span>
@@ -255,13 +264,12 @@ def _render_watchlist():
                 </div>
                 {price_html}
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-        c1, c2 = st.columns([1, 1])
-        if c1.button("Analyze", key=f"analyze_wl_{item['ticker']}", help=f"Analyze {item['ticker']}"):
-            _queue_analysis(item["ticker"])
-            st.toast(f"Analysis queued for {item['ticker']}")
-        if c2.button("Remove", key=f"remove_wl_{item['ticker']}", help="Remove from watchlist"):
-            remove_from_watchlist(item["ticker"])
-            st.rerun()
+            c1, c2 = st.columns([1, 1])
+            if c1.button("Analyze", key=f"analyze_wl_{item['ticker']}", help=f"Analyze {item['ticker']}", use_container_width=True):
+                _queue_analysis(item["ticker"])
+                st.toast(f"Analysis queued for {item['ticker']}")
+            if c2.button("Remove", key=f"remove_wl_{item['ticker']}", help="Remove from watchlist", use_container_width=True):
+                remove_from_watchlist(item["ticker"])
+                st.rerun()

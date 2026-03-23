@@ -162,12 +162,17 @@ def icon(name: str, size: int = 18, color: str = "currentColor") -> str:
 
 
 def icon_header(icon_name: str, text: str, level: int = 2) -> str:
-    """Return HTML for a header with an inline SVG icon."""
-    tag = f"h{level}"
+    """Return HTML for a header with an inline SVG icon.
+
+    Uses a styled div instead of heading tags because Streamlit's markdown
+    sanitizer can strip SVG elements inside <h1>-<h6> tags.
+    """
+    sizes = {1: "1.75rem", 2: "1.35rem", 3: "1.1rem", 4: "1rem"}
+    font_size = sizes.get(level, "1.1rem")
     svg = icon(icon_name)
     return (
-        f'<{tag} style="display:flex;align-items:center;gap:10px;margin:0;padding:0;">'
-        f'{svg} {text}</{tag}>'
+        f'<div class="section-header" style="font-size:{font_size};">'
+        f'{svg} <span>{text}</span></div>'
     )
 
 

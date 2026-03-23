@@ -66,6 +66,9 @@ html, body, [class*="css"] {
 footer { visibility: hidden; }
 header[data-testid="stHeader"] { background: transparent; }
 div[data-testid="stDecoration"] { display: none; }
+/* Hide Running / Stop status indicator */
+div[data-testid="stStatusWidget"] { display: none !important; }
+button[kind="headerNoPadding"] { display: none !important; }
 
 /* ── Sidebar ──────────────────────────────────────────────────────────── */
 section[data-testid="stSidebar"] {
@@ -87,6 +90,18 @@ section[data-testid="stSidebar"] .stRadio > div > label {
     transition: var(--transition);
     color: var(--text-secondary);
     border: 1px solid transparent;
+    cursor: pointer;
+    width: 100%;
+    display: flex !important;
+    align-items: center;
+}
+/* Hide the radio dot/circle */
+section[data-testid="stSidebar"] .stRadio > div > label > div:first-child {
+    display: none !important;
+}
+section[data-testid="stSidebar"] .stRadio > div > label > div[data-testid="stMarkdownContainer"],
+section[data-testid="stSidebar"] .stRadio > div > label > span {
+    flex: 1;
 }
 section[data-testid="stSidebar"] .stRadio > div > label:hover {
     background: var(--bg-card);
@@ -94,6 +109,7 @@ section[data-testid="stSidebar"] .stRadio > div > label:hover {
     border-color: var(--border-subtle);
 }
 section[data-testid="stSidebar"] .stRadio > div > label[data-checked="true"],
+section[data-testid="stSidebar"] .stRadio > div > label:has(input:checked),
 section[data-testid="stSidebar"] .stRadio > div [aria-checked="true"] {
     background: var(--green-dim) !important;
     color: var(--green) !important;
@@ -696,6 +712,122 @@ hr {
     margin-bottom: 12px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ── Movers table (full-width tabbed layout) ─────────────────────────── */
+.mover-tbl-header {
+    display: grid;
+    grid-template-columns: 72px 1fr 120px 190px;
+    gap: 10px;
+    padding: 6px 14px;
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-medium);
+    margin-bottom: 0;
+}
+.mover-tbl-row {
+    display: grid;
+    grid-template-columns: 72px 1fr 120px 190px;
+    gap: 10px;
+    padding: 5px 14px;
+    align-items: center;
+    transition: var(--transition);
+    border-radius: var(--radius-sm);
+    cursor: default;
+    margin: 0;
+}
+.mover-tbl-row:hover {
+    background: var(--bg-card-hover);
+}
+.mover-tbl-row-alt {
+    background: var(--bg-card);
+}
+.mover-tbl-row-alt:hover {
+    background: var(--bg-card-hover);
+}
+.mover-tbl-row.accent-green { border-left: 3px solid var(--green); }
+.mover-tbl-row.accent-red { border-left: 3px solid var(--red); }
+.mover-tbl-row.accent-cyan { border-left: 3px solid var(--cyan); }
+
+.mover-tbl-row .mover-tbl-ticker {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+}
+.mover-tbl-row .mover-tbl-company {
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mover-tbl-row .mover-tbl-sector {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.mover-tbl-row .mover-tbl-value {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-align: right;
+    white-space: nowrap;
+}
+.mover-tbl-row .mover-tbl-value.positive { color: var(--green); }
+.mover-tbl-row .mover-tbl-value.negative { color: var(--red); }
+.mover-tbl-row .mover-tbl-value.neutral { color: var(--cyan); }
+.mover-tbl-change {
+    font-weight: 700;
+    margin-left: 6px;
+}
+.mover-tbl-change.positive { color: var(--green); }
+.mover-tbl-change.negative { color: var(--red); }
+
+/* ── Section header with icon ────────────────────────────────────────── */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 12px 0;
+    padding: 0;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+.section-header svg {
+    flex-shrink: 0;
+}
+
+/* ── Button no-wrap ──────────────────────────────────────────────────── */
+.stButton > button {
+    white-space: nowrap;
+}
+
+/* ── Compact mover table rows (reduce Streamlit vertical gaps) ─────── */
+.stTabs [data-baseweb="tab-panel"] > div > div[data-testid="stVerticalBlock"] > div[data-testid="element-container"],
+.stTabs [data-baseweb="tab-panel"] > div > div[data-testid="stVerticalBlock"] > div[data-testid="column"] {
+    margin-bottom: -12px;
+}
+/* Tighten columns within mover rows */
+.stTabs div[data-testid="stHorizontalBlock"] {
+    gap: 0.25rem !important;
+    align-items: center;
+    margin-bottom: -8px;
+}
+/* Vertically center the Analyze button in its column */
+.stTabs div[data-testid="stHorizontalBlock"] .stButton {
+    margin-top: -4px;
 }
 </style>
 """, unsafe_allow_html=True)
