@@ -170,16 +170,32 @@ def _render_sectors():
 
 
 def _render_watchlist():
+    from core.screener_data import get_ticker_info_cached, get_quick_stats
+
     wl = get_watchlist()
     if not wl:
         st.info("Your watchlist is empty. Add tickers using the search above.")
         return
 
     for item in wl:
-        with st.container():
-            c1, c2, c3, c4 = st.columns([2, 3, 1, 1])
-            c1.markdown(f"**{item['ticker']}**")
-            c2.caption(item.get("notes") or "")
+        info = get_ticker_info_cached(item["ticker"])
+        with st.container(border=True):
+            c1, c2, c3, c4 = st.columns([3, 3, 1, 1])
+            c1.markdown(f"**{item['ticker']}** · {info.get('name', '')}")
+            sector = info.get("sector", "")
+            industry = info.get("industry", "")
+            if sector or industry:
+                c1.caption(f"{sector}{' · ' + industry if industry else ''}")
+            notes = item.get("notes")
+            if notes:
+                c2.caption(notes)
+            else:
+                # Show quick price if no notes
+                stats = get_quick_stats(item["ticker"])
+                if "error" not in stats:
+                    c2.markdown(f"${stats['price']} ({stats['change_pct']:+.2f}%)")
+                else:
+                    c2.caption("—")
             if c3.button("Analyze", key=f"analyze_wl_{item['ticker']}", help=f"Analyze {item['ticker']}"):
                 _queue_analysis(item["ticker"])
                 st.toast(f"Analysis queued for {item['ticker']}")
