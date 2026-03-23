@@ -1,5 +1,6 @@
 """Configuration management — loads/saves config.yaml."""
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -55,7 +56,7 @@ def get_tradingagents_config(cfg: dict, overrides: dict | None = None) -> dict:
     ta_cfg["llm_provider"] = llm.get("provider", "claude_cli")
     ta_cfg["quick_think_llm"] = llm.get("quick_think_model", "claude-sonnet-4-6")
     ta_cfg["deep_think_llm"] = llm.get("deep_think_model", "claude-opus-4-6")
-    ta_cfg["claude_cli_path"] = llm.get("claude_cli_path", "~/.local/bin/claude")
+    ta_cfg["claude_cli_path"] = os.path.expanduser(llm.get("claude_cli_path", "~/.local/bin/claude"))
     ta_cfg["claude_cli_timeout"] = llm.get("claude_cli_timeout", 300)
     ta_cfg["max_debate_rounds"] = analysis.get("max_debate_rounds", 1)
     ta_cfg["max_risk_discuss_rounds"] = analysis.get("max_risk_discuss_rounds", 1)
