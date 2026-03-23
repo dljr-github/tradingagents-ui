@@ -191,7 +191,24 @@ def get_runs(
 
 
 def get_active_runs() -> list[dict]:
-    return get_runs(status="running") + get_runs(status="pending")
+    """Get all runs that are pending/running, plus recently completed/failed (last 30 min)."""
+    active = get_runs(status="running") + get_runs(status="pending")
+    # Also include recently finished runs so they don't vanish immediately
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM runs WHERE status IN ('completed', 'failed', 'cancelled') "
+            "AND completed_at IS NOT NULL "
+            "AND completed_at > datetime('now', '-30 minutes') "
+            "ORDER BY completed_at DESC LIMIT 10"
+        ).fetchall()
+        recent = [dict(r) for r in rows]
+    # Deduplicate by id
+    seen = {r["id"] for r in active}
+    for r in recent:
+        if r["id"] not in seen:
+            active.append(r)
+            seen.add(r["id"])
+    return active
 
 
 # --- Watchlist ---

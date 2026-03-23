@@ -139,7 +139,7 @@ def _render_active_runs():
         st.markdown("---")
 
     if has_running:
-        time.sleep(5)
+        time.sleep(3)
         st.rerun()
 
 
