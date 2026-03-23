@@ -2,17 +2,17 @@
 
 import streamlit as st
 from core.config import load_config, save_config
-from views.icons import icon_header
+from views.icons import icon_header, page_header
 
 
 def render():
-    st.markdown(icon_header("gear", "Settings"), unsafe_allow_html=True)
+    st.markdown(page_header("gear", "Settings", "Configuration & Preferences"), unsafe_allow_html=True)
 
     cfg = load_config()
 
     with st.form("settings_form"):
-        # LLM Configuration
-        st.subheader("LLM Configuration")
+        st.markdown(icon_header("cpu", "LLM Configuration", level=3), unsafe_allow_html=True)
+        st.markdown("")
         llm = cfg.get("llm", {})
 
         col1, col2 = st.columns(2)
@@ -45,10 +45,10 @@ def render():
                 value=llm.get("claude_cli_timeout", 300),
             )
 
-        st.divider()
+        st.markdown("---")
 
-        # Data Configuration
-        st.subheader("Data Configuration")
+        st.markdown(icon_header("chart", "Data Configuration", level=3), unsafe_allow_html=True)
+        st.markdown("")
         data = cfg.get("data", {})
 
         data_options = ["yfinance", "alpha_vantage"]
@@ -76,10 +76,10 @@ def render():
                 index=data_options.index(data.get("news_data", "yfinance")),
             )
 
-        st.divider()
+        st.markdown("---")
 
-        # Default Analysis Settings
-        st.subheader("Default Analysis Settings")
+        st.markdown(icon_header("target", "Default Analysis Settings", level=3), unsafe_allow_html=True)
+        st.markdown("")
         analysis = cfg.get("analysis", {})
 
         all_analysts = ["market", "social", "news", "fundamentals"]
@@ -132,7 +132,6 @@ def render():
         st.success("Settings saved!")
         st.rerun()
 
-    # Show current config
     with st.expander("Current config.yaml"):
         import yaml
         st.code(yaml.dump(cfg, default_flow_style=False), language="yaml")

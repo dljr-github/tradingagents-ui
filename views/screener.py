@@ -4,15 +4,7 @@ import streamlit as st
 from core.screener_data import get_quick_stats, get_sector_performance, get_top_movers
 from core.database import add_to_watchlist, get_watchlist, is_in_watchlist, remove_from_watchlist
 from core.runner import get_runner
-from views.icons import icon_header
-
-
-def _rating_color(change_pct: float) -> str:
-    if change_pct > 0:
-        return "green"
-    elif change_pct < 0:
-        return "red"
-    return "gray"
+from views.icons import icon, icon_header, page_header
 
 
 def _queue_analysis(ticker: str):
@@ -25,7 +17,7 @@ def _queue_analysis(ticker: str):
 
 
 def render():
-    st.markdown(icon_header("chart", "Stock Screener"), unsafe_allow_html=True)
+    st.markdown(page_header("chart", "Stock Screener", "Market Discovery & Watchlist"), unsafe_allow_html=True)
 
     # Quick ticker lookup
     col1, col2, col3 = st.columns([3, 1, 1])
@@ -50,20 +42,55 @@ def render():
     if lookup_btn and lookup_ticker:
         stats = get_quick_stats(lookup_ticker.strip().upper())
         if "error" not in stats:
-            # Company info header
             name = stats.get("name", stats["ticker"])
             sector = stats.get("sector", "")
             industry = stats.get("industry", "")
-            st.markdown(f"**{name}** ({stats['ticker']})")
-            if sector or industry:
-                st.caption(f"{sector}{' · ' + industry if industry else ''}")
+            change = stats["change_pct"]
+            delta_class = "positive" if change > 0 else "negative" if change < 0 else ""
+            delta_sign = "+" if change > 0 else ""
 
-            c1, c2, c3, c4, c5 = st.columns(5)
-            c1.metric("Price", f"${stats['price']}", f"{stats['change_pct']:+.2f}%")
-            c2.metric("Volume", f"{stats['volume']:,.0f}")
-            c3.metric("RSI (14)", f"{stats['rsi']}" if stats['rsi'] else "N/A")
-            c4.metric("SMA 50", f"${stats['sma50']}" if stats['sma50'] else "N/A")
-            c5.metric("SMA 200", f"${stats['sma200']}" if stats['sma200'] else "N/A")
+            # Company info header
+            st.markdown(f"""
+            <div class="ta-card" style="margin-top: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <span class="card-ticker" style="font-size: 1.2rem;">{name}</span>
+                        <span style="color: var(--text-muted); margin-left: 8px;">({stats['ticker']})</span>
+                        {'<div class="card-sector" style="margin-top: 4px;">' + sector + (' &middot; ' + industry if industry else '') + '</div>' if sector or industry else ''}
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="card-value" style="font-size: 1.3rem;">${stats['price']}</div>
+                        <div class="stat-delta {delta_class}">{delta_sign}{change:.2f}%</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Stats grid
+            rsi_val = f"{stats['rsi']}" if stats['rsi'] else "N/A"
+            sma50_val = f"${stats['sma50']}" if stats['sma50'] else "N/A"
+            sma200_val = f"${stats['sma200']}" if stats['sma200'] else "N/A"
+
+            st.markdown(f"""
+            <div class="stat-grid" style="margin: 12px 0;">
+                <div class="stat-item">
+                    <div class="stat-label">Volume</div>
+                    <div class="stat-value">{stats['volume']:,.0f}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">RSI (14)</div>
+                    <div class="stat-value">{rsi_val}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">SMA 50</div>
+                    <div class="stat-value">{sma50_val}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">SMA 200</div>
+                    <div class="stat-value">{sma200_val}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
             if st.button(f"Analyze {lookup_ticker.upper()}", key="analyze_lookup"):
                 _queue_analysis(lookup_ticker.strip().upper())
@@ -71,13 +98,12 @@ def render():
         else:
             st.error(f"Could not fetch data for {lookup_ticker}: {stats.get('error')}")
 
-    # Notify if something was just queued
+    # Clear queued notification
     if st.session_state.get("last_queued_ticker"):
-        ticker = st.session_state.pop("last_queued_ticker")
+        st.session_state.pop("last_queued_ticker")
 
     st.divider()
 
-    # Layout: Top Movers | Sector Heatmap
     tab_movers, tab_sectors, tab_watchlist = st.tabs(["Top Movers", "Sector Performance", "Watchlist"])
 
     with tab_movers:
@@ -88,6 +114,26 @@ def render():
 
     with tab_watchlist:
         _render_watchlist()
+
+
+def _mover_card(item: dict, accent: str, value_text: str) -> str:
+    """Generate HTML for a single mover card."""
+    name = item.get("name", "")
+    sector = item.get("sector", "")
+    return f"""
+    <div class="ta-card ta-card-accent-{accent}">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span class="card-ticker">{item['ticker']}</span>
+                {f'<span class="card-name" style="margin-left: 6px;">{name}</span>' if name else ''}
+                {f'<div class="card-sector">{sector}</div>' if sector else ''}
+            </div>
+            <div style="text-align: right;">
+                <div class="card-value {'positive' if accent == 'green' else 'negative' if accent == 'red' else 'neutral'}">{value_text}</div>
+            </div>
+        </div>
+    </div>
+    """
 
 
 def _render_top_movers():
@@ -103,41 +149,35 @@ def _render_top_movers():
     with col_gain:
         st.markdown(icon_header("trending-up", "Top Gainers", level=3), unsafe_allow_html=True)
         for item in movers.get("gainers", []):
-            with st.container():
-                c1, c2, c3 = st.columns([3, 2, 1])
-                c1.markdown(f"**{item['ticker']}** · {item.get('name', '')}")
-                if item.get("sector"):
-                    c1.caption(item["sector"])
-                c2.markdown(f"${item['price']} ({item['change_pct']:+.2f}%)")
-                if c3.button("Analyze", key=f"analyze_g_{item['ticker']}", help=f"Analyze {item['ticker']}"):
-                    _queue_analysis(item["ticker"])
-                    st.toast(f"Analysis queued for {item['ticker']}")
+            st.markdown(
+                _mover_card(item, "green", f"${item['price']} ({item['change_pct']:+.2f}%)"),
+                unsafe_allow_html=True,
+            )
+            if st.button("Analyze", key=f"analyze_g_{item['ticker']}", help=f"Analyze {item['ticker']}"):
+                _queue_analysis(item["ticker"])
+                st.toast(f"Analysis queued for {item['ticker']}")
 
     with col_lose:
         st.markdown(icon_header("trending-down", "Top Losers", level=3), unsafe_allow_html=True)
         for item in movers.get("losers", []):
-            with st.container():
-                c1, c2, c3 = st.columns([3, 2, 1])
-                c1.markdown(f"**{item['ticker']}** · {item.get('name', '')}")
-                if item.get("sector"):
-                    c1.caption(item["sector"])
-                c2.markdown(f"${item['price']} ({item['change_pct']:+.2f}%)")
-                if c3.button("Analyze", key=f"analyze_l_{item['ticker']}", help=f"Analyze {item['ticker']}"):
-                    _queue_analysis(item["ticker"])
-                    st.toast(f"Analysis queued for {item['ticker']}")
+            st.markdown(
+                _mover_card(item, "red", f"${item['price']} ({item['change_pct']:+.2f}%)"),
+                unsafe_allow_html=True,
+            )
+            if st.button("Analyze", key=f"analyze_l_{item['ticker']}", help=f"Analyze {item['ticker']}"):
+                _queue_analysis(item["ticker"])
+                st.toast(f"Analysis queued for {item['ticker']}")
 
     with col_vol:
         st.markdown(icon_header("bar-chart", "Volume Spikes", level=3), unsafe_allow_html=True)
         for item in movers.get("volume", []):
-            with st.container():
-                c1, c2, c3 = st.columns([3, 2, 1])
-                c1.markdown(f"**{item['ticker']}** · {item.get('name', '')}")
-                if item.get("sector"):
-                    c1.caption(item["sector"])
-                c2.markdown(f"{item['vol_ratio']:.1f}x avg vol")
-                if c3.button("Analyze", key=f"analyze_v_{item['ticker']}", help=f"Analyze {item['ticker']}"):
-                    _queue_analysis(item["ticker"])
-                    st.toast(f"Analysis queued for {item['ticker']}")
+            st.markdown(
+                _mover_card(item, "cyan", f"{item['vol_ratio']:.1f}x avg vol"),
+                unsafe_allow_html=True,
+            )
+            if st.button("Analyze", key=f"analyze_v_{item['ticker']}", help=f"Analyze {item['ticker']}"):
+                _queue_analysis(item["ticker"])
+                st.toast(f"Analysis queued for {item['ticker']}")
 
 
 def _render_sectors():
@@ -148,23 +188,29 @@ def _render_sectors():
         st.info("No sector data available.")
         return
 
-    # Simple heatmap using columns
     cols = st.columns(4)
     for i, s in enumerate(sectors):
         col = cols[i % 4]
         change = s["change_pct"]
-        if change > 0:
+        if change > 2:
             color = "#00d26a"
-        elif change < 0:
-            color = "#ff4444"
+            bg_gradient = "linear-gradient(135deg, rgba(0, 210, 106, 0.12) 0%, rgba(0, 210, 106, 0.04) 100%)"
+        elif change > 0:
+            color = "#7dd87d"
+            bg_gradient = "linear-gradient(135deg, rgba(125, 216, 125, 0.08) 0%, rgba(125, 216, 125, 0.02) 100%)"
+        elif change > -2:
+            color = "#ff8c42"
+            bg_gradient = "linear-gradient(135deg, rgba(255, 140, 66, 0.08) 0%, rgba(255, 140, 66, 0.02) 100%)"
         else:
-            color = "#888"
+            color = "#ff4757"
+            bg_gradient = "linear-gradient(135deg, rgba(255, 71, 87, 0.12) 0%, rgba(255, 71, 87, 0.04) 100%)"
+
         col.markdown(
-            f"""<div style="background: rgba(28,34,48,0.8); border-left: 4px solid {color};
-            padding: 12px; margin: 4px 0; border-radius: 4px;">
-            <b>{s['sector']}</b><br>
-            <span style="color: {color}; font-size: 1.2em;">{change:+.2f}%</span><br>
-            <small>{s['etf']}</small></div>""",
+            f"""<div class="sector-card" style="background: {bg_gradient}; border-color: {color}30;">
+                <div class="sector-name">{s['sector']}</div>
+                <div class="sector-change" style="color: {color};">{change:+.2f}%</div>
+                <div class="sector-etf">{s['etf']}</div>
+            </div>""",
             unsafe_allow_html=True,
         )
 
@@ -179,26 +225,43 @@ def _render_watchlist():
 
     for item in wl:
         info = get_ticker_info_cached(item["ticker"])
-        with st.container(border=True):
-            c1, c2, c3, c4 = st.columns([3, 3, 1, 1])
-            c1.markdown(f"**{item['ticker']}** · {info.get('name', '')}")
-            sector = info.get("sector", "")
-            industry = info.get("industry", "")
-            if sector or industry:
-                c1.caption(f"{sector}{' · ' + industry if industry else ''}")
-            notes = item.get("notes")
-            if notes:
-                c2.caption(notes)
-            else:
-                # Show quick price if no notes
-                stats = get_quick_stats(item["ticker"])
-                if "error" not in stats:
-                    c2.markdown(f"${stats['price']} ({stats['change_pct']:+.2f}%)")
-                else:
-                    c2.caption("—")
-            if c3.button("Analyze", key=f"analyze_wl_{item['ticker']}", help=f"Analyze {item['ticker']}"):
-                _queue_analysis(item["ticker"])
-                st.toast(f"Analysis queued for {item['ticker']}")
-            if c4.button("Remove", key=f"remove_wl_{item['ticker']}", help="Remove from watchlist"):
-                remove_from_watchlist(item["ticker"])
-                st.rerun()
+        name = info.get("name", "")
+        sector = info.get("sector", "")
+        industry = info.get("industry", "")
+
+        # Get price data
+        price_html = ""
+        notes = item.get("notes")
+        if notes:
+            price_html = f'<div style="color: var(--text-secondary); font-size: 0.85rem;">{notes}</div>'
+        else:
+            stats = get_quick_stats(item["ticker"])
+            if "error" not in stats:
+                change = stats["change_pct"]
+                delta_class = "positive" if change > 0 else "negative" if change < 0 else ""
+                price_html = f"""
+                <div style="text-align: right;">
+                    <div class="card-value" style="font-size: 1.1rem;">${stats['price']}</div>
+                    <div class="stat-delta {delta_class}">{change:+.2f}%</div>
+                </div>"""
+
+        st.markdown(f"""
+        <div class="ta-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span class="card-ticker">{item['ticker']}</span>
+                    {f'<span class="card-name" style="margin-left: 8px;">{name}</span>' if name else ''}
+                    {f'<div class="card-sector">{sector}{" &middot; " + industry if industry else ""}</div>' if sector or industry else ''}
+                </div>
+                {price_html}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        c1, c2 = st.columns([1, 1])
+        if c1.button("Analyze", key=f"analyze_wl_{item['ticker']}", help=f"Analyze {item['ticker']}"):
+            _queue_analysis(item["ticker"])
+            st.toast(f"Analysis queued for {item['ticker']}")
+        if c2.button("Remove", key=f"remove_wl_{item['ticker']}", help="Remove from watchlist"):
+            remove_from_watchlist(item["ticker"])
+            st.rerun()

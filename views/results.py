@@ -4,7 +4,7 @@ import json
 
 import streamlit as st
 from core.database import get_run, get_runs
-from views.icons import icon_header
+from views.icons import icon, icon_header, page_header
 
 
 RATING_COLORS = {
@@ -12,12 +12,12 @@ RATING_COLORS = {
     "OVERWEIGHT": "#7dd87d",
     "HOLD": "#ffd700",
     "UNDERWEIGHT": "#ff8c42",
-    "SELL": "#ff4444",
+    "SELL": "#ff4757",
 }
 
 
 def render():
-    st.markdown(icon_header("clipboard", "Analysis Results"), unsafe_allow_html=True)
+    st.markdown(page_header("clipboard", "Analysis Results", "Detailed Reports & Decisions"), unsafe_allow_html=True)
 
     # Run selector
     run_id = st.session_state.get("view_run_id")
@@ -27,8 +27,7 @@ def render():
         st.info("No completed analyses yet. Start one from the Analysis page.")
         return
 
-    # Dropdown to select a run
-    run_options = {f"#{r['id']} — {r['ticker']} ({r['trade_date']}) → {r.get('rating', '?')}": r["id"] for r in completed_runs}
+    run_options = {f"#{r['id']} -- {r['ticker']} ({r['trade_date']}) -> {r.get('rating', '?')}": r["id"] for r in completed_runs}
 
     if run_options:
         selected_label = st.selectbox(
@@ -52,19 +51,27 @@ def render():
 
 
 def _render_run_detail(run: dict):
-    # Header card
     rating = (run.get("rating") or "N/A").upper()
     color = RATING_COLORS.get(rating, "#888")
+    rating_cls = rating.lower().replace(" ", "")
 
-    col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
-    col1.markdown(f"### {run['ticker']}")
-    col2.markdown(f"**Date:** {run['trade_date']}")
-    col3.markdown(f"**Completed:** {run.get('completed_at', 'N/A')}")
-    col4.markdown(f"<h3 style='color: {color};'>{rating}</h3>", unsafe_allow_html=True)
+    # Header with prominent rating badge
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; margin-bottom: 8px;">
+        <div>
+            <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1.6rem; color: var(--text-primary);">
+                {run['ticker']}
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+                {run['trade_date']} &middot; Completed {run.get('completed_at', 'N/A')[:19] if run.get('completed_at') else 'N/A'}
+            </div>
+        </div>
+        <div class="rating-badge rating-badge-lg rating-{rating_cls}">{rating}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.divider()
 
-    # Tabs for each report section
     tabs = st.tabs([
         "Market Analysis",
         "Sentiment",
@@ -105,6 +112,7 @@ def _render_report(content: str | None, title: str):
     if not content or content.strip() == "":
         st.info(f"No {title.lower()} data available for this run.")
         return
+    st.markdown(f'<div class="report-content">{""}</div>', unsafe_allow_html=True)
     st.markdown(content)
 
 
@@ -122,7 +130,12 @@ def _render_debate(debate_json: str | None):
     col_bull, col_bear = st.columns(2)
 
     with col_bull:
-        st.markdown(icon_header("trending-up", "Bull Case", level=3), unsafe_allow_html=True)
+        bull_svg = icon("trending-up", color="#00d26a")
+        st.markdown(f"""
+        <div class="debate-panel debate-bull">
+            <div class="debate-panel-title">{bull_svg} Bull Case</div>
+        </div>
+        """, unsafe_allow_html=True)
         bull = debate.get("bull_history", "")
         if bull:
             st.markdown(bull)
@@ -130,7 +143,12 @@ def _render_debate(debate_json: str | None):
             st.info("No bull arguments recorded.")
 
     with col_bear:
-        st.markdown(icon_header("trending-down", "Bear Case", level=3), unsafe_allow_html=True)
+        bear_svg = icon("trending-down", color="#ff4757")
+        st.markdown(f"""
+        <div class="debate-panel debate-bear">
+            <div class="debate-panel-title">{bear_svg} Bear Case</div>
+        </div>
+        """, unsafe_allow_html=True)
         bear = debate.get("bear_history", "")
         if bear:
             st.markdown(bear)
@@ -139,8 +157,12 @@ def _render_debate(debate_json: str | None):
 
     judge = debate.get("judge_decision", "")
     if judge:
-        st.divider()
-        st.markdown(icon_header("scale", "Research Manager Verdict", level=3), unsafe_allow_html=True)
+        scale_svg = icon("scale", color="#00b4d8")
+        st.markdown(f"""
+        <div class="verdict-card">
+            <div class="verdict-title">{scale_svg} Research Manager Verdict</div>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown(judge)
 
 
@@ -158,21 +180,46 @@ def _render_risk(risk_json: str | None):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown(icon_header("flame", "Aggressive", level=3), unsafe_allow_html=True)
+        flame_svg = icon("flame", color="#ff8c42")
+        st.markdown(f"""
+        <div class="ta-card ta-card-accent-gold">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--orange); font-weight: 600;">
+                {flame_svg} Aggressive
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown(risk.get("aggressive_history", "") or "N/A")
 
     with col2:
-        st.markdown(icon_header("shield", "Conservative", level=3), unsafe_allow_html=True)
+        shield_svg = icon("shield", color="#00b4d8")
+        st.markdown(f"""
+        <div class="ta-card ta-card-accent-cyan">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--cyan); font-weight: 600;">
+                {shield_svg} Conservative
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown(risk.get("conservative_history", "") or "N/A")
 
     with col3:
-        st.markdown(icon_header("scale", "Neutral", level=3), unsafe_allow_html=True)
+        scale_svg = icon("scale", color="#ffd700")
+        st.markdown(f"""
+        <div class="ta-card" style="border-left: 3px solid var(--gold);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--gold); font-weight: 600;">
+                {scale_svg} Neutral
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown(risk.get("neutral_history", "") or "N/A")
 
     judge = risk.get("judge_decision", "")
     if judge:
-        st.divider()
-        st.markdown(icon_header("clipboard", "Risk Assessment Verdict", level=3), unsafe_allow_html=True)
+        clip_svg = icon("clipboard", color="#00b4d8")
+        st.markdown(f"""
+        <div class="verdict-card">
+            <div class="verdict-title">{clip_svg} Risk Assessment Verdict</div>
+        </div>
+        """, unsafe_allow_html=True)
         st.markdown(judge)
 
 

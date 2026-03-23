@@ -85,7 +85,7 @@ _ICONS = {
     ),
     "x-circle": (
         '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" '
-        'fill="none" stroke="#ff4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        'fill="none" stroke="#ff4757" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
         '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/>'
         '<line x1="9" y1="9" x2="15" y2="15"/></svg>'
     ),
@@ -119,19 +119,68 @@ _ICONS = {
         'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
         '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
     ),
+    "activity": (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" '
+        'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
+    ),
+    "target": (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" '
+        'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
+    ),
+    "eye": (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" '
+        'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>'
+        '<circle cx="12" cy="12" r="3"/></svg>'
+    ),
+    "zap": (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" '
+        'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+    ),
+    "briefcase": (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" '
+        'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+        '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>'
+        '<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>'
+    ),
 }
 
 
-def icon(name: str) -> str:
+def icon(name: str, size: int = 18, color: str = "currentColor") -> str:
     """Return an inline SVG icon string. Use with unsafe_allow_html=True."""
-    return _ICONS.get(name, "")
+    svg = _ICONS.get(name, "")
+    if size != 18 and svg:
+        svg = svg.replace('width="18"', f'width="{size}"').replace('height="18"', f'height="{size}"')
+        svg = svg.replace('width="16"', f'width="{size}"').replace('height="16"', f'height="{size}"')
+        svg = svg.replace('width="14"', f'width="{size}"').replace('height="14"', f'height="{size}"')
+    if color != "currentColor" and svg:
+        svg = svg.replace('stroke="currentColor"', f'stroke="{color}"')
+    return svg
 
 
 def icon_header(icon_name: str, text: str, level: int = 2) -> str:
     """Return HTML for a header with an inline SVG icon."""
     tag = f"h{level}"
-    svg = _ICONS.get(icon_name, "")
+    svg = icon(icon_name)
     return (
-        f'<{tag} style="display:flex;align-items:center;gap:8px;margin:0;">'
+        f'<{tag} style="display:flex;align-items:center;gap:10px;margin:0;padding:0;">'
         f'{svg} {text}</{tag}>'
+    )
+
+
+def page_header(icon_name: str, title: str, subtitle: str = "") -> str:
+    """Return HTML for a page-level header bar."""
+    svg = icon(icon_name, size=22, color="#00d26a")
+    sub_html = f'<div class="header-sub">{subtitle}</div>' if subtitle else ""
+    return (
+        f'<div class="header-bar">'
+        f'{svg}'
+        f'<div>'
+        f'<div class="header-title">{title}</div>'
+        f'{sub_html}'
+        f'</div>'
+        f'</div>'
     )
