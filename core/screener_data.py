@@ -195,3 +195,76 @@ def get_ticker_price(ticker: str) -> float | None:
         return round(float(hist["Close"].iloc[-1]), 2)
     except Exception:
         return None
+
+
+def get_sector_stocks(sector_etf: str, n: int = 5) -> list[dict]:
+    """Get top movers from SCAN_UNIVERSE that belong to a sector (by ETF proxy).
+
+    Since we can't reliably map ETF → individual stocks without holdings data,
+    we filter SCAN_UNIVERSE by sector name and return top movers by abs change.
+    """
+    # Map ETF back to sector name
+    etf_to_sector = {v: k for k, v in SECTOR_ETFS.items()}
+    target_sector = etf_to_sector.get(sector_etf, "")
+
+    matches = []
+    for ticker in SCAN_UNIVERSE:
+        info = get_ticker_info_cached(ticker)
+        info_sector = info.get("sector", "")
+        # Fuzzy match: sector names from yfinance may differ slightly
+        if not info_sector:
+            continue
+        if target_sector.lower().replace(".", "").replace(" ", "") in info_sector.lower().replace(" ", ""):
+            matches.append(ticker)
+        elif info_sector.lower().replace(" ", "") in target_sector.lower().replace(".", "").replace(" ", ""):
+            matches.append(ticker)
+
+    if not matches:
+        return []
+
+    # Get recent price data for matched tickers
+    results = []
+    tickers_str = " ".join(matches)
+    try:
+        data = yf.download(tickers_str, period="5d", group_by="ticker", progress=False, threads=True)
+    except Exception:
+        return []
+
+    for ticker in matches:
+        try:
+            if len(matches) > 1 and ticker in data.columns.get_level_values(0):
+                df = data[ticker].dropna()
+            elif len(matches) == 1:
+                df = data.dropna()
+            else:
+                continue
+            if df.empty or len(df) < 2:
+                continue
+            latest = df.iloc[-1]
+            prev = df.iloc[-2]
+            price = latest["Close"]
+            change_pct = ((price - prev["Close"]) / prev["Close"]) * 100
+            info = get_ticker_info_cached(ticker)
+            results.append({
+                "ticker": ticker,
+                "name": info.get("name", ticker),
+                "price": round(float(price), 2),
+                "change_pct": round(float(change_pct), 2),
+            })
+        except Exception:
+            continue
+
+    results.sort(key=lambda x: abs(x["change_pct"]), reverse=True)
+    return results[:n]
+
+
+def get_price_history(ticker: str, period: str = "1y") -> pd.DataFrame:
+    """Get OHLCV price history for charting."""
+    try:
+        tk = yf.Ticker(ticker)
+        hist = tk.history(period=period)
+        if hist.empty:
+            return pd.DataFrame()
+        return hist
+    except Exception:
+        return pd.DataFrame()

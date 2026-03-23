@@ -717,8 +717,8 @@ hr {
 /* ── Movers table (full-width tabbed layout) ─────────────────────────── */
 .mover-tbl-header {
     display: grid;
-    grid-template-columns: 72px 1fr 120px 190px;
-    gap: 10px;
+    grid-template-columns: 70px 1fr 160px;
+    gap: 8px;
     padding: 6px 14px;
     font-family: var(--font-ui);
     font-size: 0.7rem;
@@ -731,8 +731,8 @@ hr {
 }
 .mover-tbl-row {
     display: grid;
-    grid-template-columns: 72px 1fr 120px 190px;
-    gap: 10px;
+    grid-template-columns: 70px 1fr 160px;
+    gap: 8px;
     padding: 5px 14px;
     align-items: center;
     transition: var(--transition);
@@ -811,7 +811,12 @@ hr {
 
 /* ── Button no-wrap ──────────────────────────────────────────────────── */
 .stButton > button {
-    white-space: nowrap;
+    white-space: nowrap !important;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 6px 10px;
+    font-size: 0.8rem;
 }
 
 /* ── Compact mover table rows (reduce Streamlit vertical gaps) ─────── */
