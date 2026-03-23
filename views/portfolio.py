@@ -46,42 +46,45 @@ def _render_summary(summary: dict):
     best = summary.get("best_performer")
     worst = summary.get("worst_performer")
 
-    cols = st.columns(5)
+    pnl_cls = "positive" if total_pnl >= 0 else "negative"
+    sign = "+" if total_pnl >= 0 else ""
+    pnl_pct_cls = "positive" if total_pnl_pct >= 0 else "negative"
+    sign_pct = "+" if total_pnl_pct >= 0 else ""
 
-    with cols[0]:
+    row1 = st.columns(3)
+
+    with row1[0]:
         st.markdown(f"""
         <div class="ta-card" style="text-align:center;">
-            <div class="stat-label">Total Value</div>
+            <div class="stat-label">Value</div>
             <div class="stat-value">${total_value:,.2f}</div>
         </div>
         """, unsafe_allow_html=True)
 
-    with cols[1]:
-        pnl_cls = "positive" if total_pnl >= 0 else "negative"
-        sign = "+" if total_pnl >= 0 else ""
+    with row1[1]:
         st.markdown(f"""
         <div class="ta-card" style="text-align:center;">
-            <div class="stat-label">Total P&L</div>
+            <div class="stat-label">P&amp;L</div>
             <div class="stat-value {pnl_cls}">{sign}${total_pnl:,.2f}</div>
         </div>
         """, unsafe_allow_html=True)
 
-    with cols[2]:
-        pnl_pct_cls = "positive" if total_pnl_pct >= 0 else "negative"
-        sign_pct = "+" if total_pnl_pct >= 0 else ""
+    with row1[2]:
         st.markdown(f"""
         <div class="ta-card" style="text-align:center;">
-            <div class="stat-label">P&L %</div>
+            <div class="stat-label">P&amp;L %</div>
             <div class="stat-value {pnl_pct_cls}">{sign_pct}{total_pnl_pct:.2f}%</div>
         </div>
         """, unsafe_allow_html=True)
 
-    with cols[3]:
+    row2 = st.columns(2)
+
+    with row2[0]:
         if best:
             best_sign = "+" if best["pnl_pct"] >= 0 else ""
             st.markdown(f"""
             <div class="ta-card ta-card-accent-green" style="text-align:center;">
-                <div class="stat-label">Best Performer</div>
+                <div class="stat-label">Best</div>
                 <div class="card-ticker">{best['ticker']}</div>
                 <div class="stat-delta positive">{best_sign}{best['pnl_pct']:.2f}%</div>
             </div>
@@ -89,17 +92,17 @@ def _render_summary(summary: dict):
         else:
             st.markdown("""
             <div class="ta-card" style="text-align:center;">
-                <div class="stat-label">Best Performer</div>
+                <div class="stat-label">Best</div>
                 <div class="stat-value" style="color:var(--text-muted);">--</div>
             </div>
             """, unsafe_allow_html=True)
 
-    with cols[4]:
+    with row2[1]:
         if worst:
             worst_sign = "+" if worst["pnl_pct"] >= 0 else ""
             st.markdown(f"""
             <div class="ta-card ta-card-accent-red" style="text-align:center;">
-                <div class="stat-label">Worst Performer</div>
+                <div class="stat-label">Worst</div>
                 <div class="card-ticker">{worst['ticker']}</div>
                 <div class="stat-delta negative">{worst_sign}{worst['pnl_pct']:.2f}%</div>
             </div>
@@ -107,7 +110,7 @@ def _render_summary(summary: dict):
         else:
             st.markdown("""
             <div class="ta-card" style="text-align:center;">
-                <div class="stat-label">Worst Performer</div>
+                <div class="stat-label">Worst</div>
                 <div class="stat-value" style="color:var(--text-muted);">--</div>
             </div>
             """, unsafe_allow_html=True)

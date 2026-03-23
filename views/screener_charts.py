@@ -96,7 +96,7 @@ def make_sparkline(ticker: str):
     fig.update_layout(
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
         margin=dict(l=0, r=0, t=0, b=0),
-        height=40, width=120,
+        height=60, width=120,
         xaxis=dict(visible=False), yaxis=dict(visible=False),
         showlegend=False,
     )

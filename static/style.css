@@ -638,6 +638,7 @@ hr {
     letter-spacing: 0.08em;
     color: var(--text-muted);
     margin-bottom: 6px;
+    white-space: nowrap;
 }
 .stat-value {
     font-family: var(--font-mono);
@@ -814,5 +815,31 @@ hr {
 /* Vertically center the Analyze button in its column */
 .stTabs div[data-testid="stHorizontalBlock"] .stButton {
     margin-top: -4px;
+}
+
+/* ── Watchlist card sizing ────────────────────────────────────────────── */
+div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlockBorderWrapper"] {
+    min-height: 80px;
+    overflow: visible !important;
+}
+/* Prevent plotly charts inside cards from being clipped */
+div[data-testid="stVerticalBlockBorderWrapper"] .stPlotlyChart {
+    overflow: visible !important;
+}
+
+/* ── Metric label nowrap (portfolio summary etc) ─────────────────────── */
+div[data-testid="stMetric"] label {
+    white-space: nowrap !important;
+}
+
+/* ── Debate panels — prevent text overflow ───────────────────────────── */
+.debate-panel {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+/* ── Pipeline stepper — ensure labels don't wrap ─────────────────────── */
+.pipeline-label {
+    white-space: nowrap;
 }
 </style>

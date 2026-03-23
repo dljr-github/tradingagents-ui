@@ -139,7 +139,7 @@ def render():
                         {'<div class="card-sector" style="margin-top: 4px;">' + sector + (' &middot; ' + industry if industry else '') + '</div>' if sector or industry else ''}
                     </div>
                     <div style="text-align: right;">
-                        <div class="card-value" style="font-size: 1.3rem;">${stats['price']}</div>
+                        <div class="card-value" style="font-size: 1.3rem;">${stats['price']:.2f}</div>
                         <div class="stat-delta {delta_class}">{delta_sign}{change:.2f}%</div>
                     </div>
                 </div>
@@ -277,14 +277,14 @@ def _render_top_movers():
     with tab_gain:
         _render_mover_tab(
             movers.get("gainers", []), "green",
-            lambda x: f"${x['price']}  <span class='mover-tbl-change positive'>{x['change_pct']:+.2f}%</span>",
+            lambda x: f"${x['price']:.2f}  <span class='mover-tbl-change positive'>{x['change_pct']:+.2f}%</span>",
             "g",
         )
 
     with tab_lose:
         _render_mover_tab(
             movers.get("losers", []), "red",
-            lambda x: f"${x['price']}  <span class='mover-tbl-change negative'>{x['change_pct']:+.2f}%</span>",
+            lambda x: f"${x['price']:.2f}  <span class='mover-tbl-change negative'>{x['change_pct']:+.2f}%</span>",
             "l",
         )
 
@@ -405,8 +405,8 @@ def _render_watchlist():
             with col_ticker:
                 st.markdown(f'<span style="font-family:var(--font-mono); font-weight:700; font-size:1rem; color:var(--text-primary);">{item["ticker"]}</span>', unsafe_allow_html=True)
             with col_company:
-                sector_line = f'<span style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase;"> · {sector}{"/" + industry if industry else ""}</span>' if sector else ""
-                st.markdown(f'<span style="color:var(--text-secondary); font-size:0.85rem;">{name}{sector_line}</span>', unsafe_allow_html=True)
+                sector_short = sector if sector else ""
+                st.markdown(f'<div style="overflow:hidden; white-space:nowrap; text-overflow:ellipsis;"><span style="color:var(--text-secondary); font-size:0.85rem;">{name}</span>{" <span style=&quot;color:var(--text-muted); font-size:0.7rem; text-transform:uppercase;&quot;>· " + sector_short + "</span>" if sector_short else ""}</div>', unsafe_allow_html=True)
             with col_price:
                 if has_price:
                     change = stats["change_pct"]
@@ -415,7 +415,7 @@ def _render_watchlist():
                     earnings_badge = ""
                     if earnings_days is not None:
                         earnings_badge = f'<div style="color:#ffd700; font-size:0.72rem; font-weight:600; margin-top:2px;">Earnings in {earnings_days} day{"s" if earnings_days != 1 else ""}</div>'
-                    st.markdown(f'<div style="text-align:right; font-family:var(--font-mono);"><div style="font-weight:600; font-size:1rem;">${stats["price"]}</div><div style="color:{chg_color}; font-size:0.85rem;">{change:+.2f}%</div>{earnings_badge}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="text-align:right; font-family:var(--font-mono);"><div style="font-weight:600; font-size:1rem;">${stats["price"]:.2f}</div><div style="color:{chg_color}; font-size:0.85rem;">{change:+.2f}%</div>{earnings_badge}</div>', unsafe_allow_html=True)
             with col_spark:
                 make_sparkline(item["ticker"])
 
