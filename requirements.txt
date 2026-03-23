@@ -2,4 +2,8 @@ streamlit>=1.45.0
 yfinance>=0.2.63
 pandas>=2.3.0
 pyyaml>=6.0
+feedparser>=6.0
+beautifulsoup4>=4.12
+requests>=2.31
+lxml>=5.0
 -e /home/darrell/openclaw/projects/trading-agents

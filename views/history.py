@@ -1,5 +1,7 @@
 """History page — browse, filter, compare past analysis runs."""
 
+import csv
+import io
 import json
 from datetime import date, timedelta
 
@@ -73,6 +75,11 @@ def render():
 
 
 def _render_runs_table(df: pd.DataFrame, runs: list[dict]):
+    # Export CSV for runs table
+    buf = io.StringIO()
+    df.to_csv(buf, index=False)
+    st.download_button("Export CSV", buf.getvalue(), file_name="analysis_history.csv", mime="text/csv", key="export_history_csv")
+
     st.dataframe(
         df,
         use_container_width=True,
@@ -90,9 +97,38 @@ def _render_runs_table(df: pd.DataFrame, runs: list[dict]):
         format_func=lambda x: f"#{x} -- {next(r['ticker'] for r in runs if r['id'] == x)}",
     )
 
-    if st.button("View Results"):
-        st.session_state["view_run_id"] = selected_id
-        st.info(f"Navigate to the Results page to see details for Run #{selected_id}.")
+    col_view, col_export = st.columns(2)
+    with col_view:
+        if st.button("View Results"):
+            st.session_state["view_run_id"] = selected_id
+            st.info(f"Navigate to the Results page to see details for Run #{selected_id}.")
+    with col_export:
+        run_detail = get_run(selected_id)
+        if run_detail:
+            report_lines = [
+                f"Analysis Report — {run_detail['ticker']} ({run_detail['trade_date']})",
+                f"Rating: {run_detail.get('rating', 'N/A')}",
+                f"Status: {run_detail['status']}",
+                "=" * 60,
+                "\n--- Market Report ---",
+                run_detail.get("market_report", "N/A") or "N/A",
+                "\n--- Sentiment Report ---",
+                run_detail.get("sentiment_report", "N/A") or "N/A",
+                "\n--- News Report ---",
+                run_detail.get("news_report", "N/A") or "N/A",
+                "\n--- Fundamentals Report ---",
+                run_detail.get("fundamentals_report", "N/A") or "N/A",
+                "\n--- Final Decision ---",
+                run_detail.get("final_decision", "N/A") or "N/A",
+            ]
+            report_text = "\n".join(report_lines)
+            st.download_button(
+                "Export Report",
+                report_text,
+                file_name=f"report_{run_detail['ticker']}_{run_detail['trade_date']}.txt",
+                mime="text/plain",
+                key="export_run_report",
+            )
 
 
 def _render_accuracy(runs: list[dict]):

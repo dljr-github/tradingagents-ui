@@ -70,6 +70,30 @@ def _render_run_detail(run: dict):
     </div>
     """, unsafe_allow_html=True)
 
+    # Export Report button
+    report_lines = [
+        f"Analysis Report — {run['ticker']} ({run['trade_date']})",
+        f"Rating: {rating}",
+        "=" * 60,
+        "\n--- Market Report ---",
+        run.get("market_report", "N/A") or "N/A",
+        "\n--- Sentiment Report ---",
+        run.get("sentiment_report", "N/A") or "N/A",
+        "\n--- News Report ---",
+        run.get("news_report", "N/A") or "N/A",
+        "\n--- Fundamentals Report ---",
+        run.get("fundamentals_report", "N/A") or "N/A",
+        "\n--- Final Decision ---",
+        run.get("final_decision", "N/A") or "N/A",
+    ]
+    st.download_button(
+        "Export Report",
+        "\n".join(report_lines),
+        file_name=f"report_{run['ticker']}_{run['trade_date']}.txt",
+        mime="text/plain",
+        key="export_result_report",
+    )
+
     st.divider()
 
     tabs = st.tabs([

@@ -837,6 +837,78 @@ hr {
 </style>
 """, unsafe_allow_html=True)
 
+# Light theme override
+if st.session_state.get("theme") == "light":
+    st.markdown("""
+    <style>
+    :root {
+        --bg-primary: #f5f6fa;
+        --bg-secondary: #ebedf2;
+        --bg-card: #ffffff;
+        --bg-card-hover: #f0f1f5;
+        --bg-elevated: #e8e9ed;
+        --border-subtle: rgba(0, 0, 0, 0.08);
+        --border-medium: rgba(0, 0, 0, 0.14);
+        --border-accent: rgba(0, 160, 80, 0.3);
+        --text-primary: #1a1a2e;
+        --text-secondary: #555770;
+        --text-muted: #8a8ca5;
+        --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+        --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    .stApp { background: var(--bg-primary); }
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #f0f1f5 0%, #e8e9ed 100%);
+        border-right: 1px solid var(--border-subtle);
+    }
+    section[data-testid="stSidebar"] .stRadio > div > label {
+        color: var(--text-secondary);
+    }
+    section[data-testid="stSidebar"] .stRadio > div > label:hover {
+        background: var(--bg-card);
+        color: var(--text-primary);
+    }
+    .stButton > button {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        border: 1px solid var(--border-medium);
+    }
+    .stButton > button:hover {
+        background: var(--bg-elevated);
+        color: var(--green);
+    }
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div,
+    .stMultiSelect > div > div,
+    .stDateInput > div > div > input,
+    .stNumberInput > div > div > input {
+        background: var(--bg-card) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-medium) !important;
+    }
+    .stTextInput label, .stSelectbox label, .stMultiSelect label,
+    .stDateInput label, .stNumberInput label, .stSlider label {
+        color: var(--text-secondary) !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        background: var(--bg-secondary);
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: var(--text-secondary);
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        color: var(--text-primary);
+        background: var(--bg-card);
+    }
+    .stTabs [aria-selected="true"] {
+        background: var(--bg-card) !important;
+        color: var(--green) !important;
+    }
+    p, span, div, label { color: var(--text-primary); }
+    h1, h2, h3, h4, h5, h6 { color: var(--text-primary); }
+    </style>
+    """, unsafe_allow_html=True)
+
 # ---------------------------------------------------------------------------
 # Sidebar — branding + navigation
 # ---------------------------------------------------------------------------
@@ -858,11 +930,25 @@ with st.sidebar:
 
     st.divider()
 
+    # Theme toggle
+    if "theme" not in st.session_state:
+        st.session_state["theme"] = "dark"
+    theme_label = "Light Mode" if st.session_state["theme"] == "dark" else "Dark Mode"
+    if st.button(theme_label, key="theme_toggle", use_container_width=True):
+        st.session_state["theme"] = "light" if st.session_state["theme"] == "dark" else "dark"
+        st.rerun()
+
+    st.divider()
+
     PAGES = {
         "Screener": "screener",
         "Analysis": "analysis",
         "Results": "results",
         "History": "history",
+        "News": "news",
+        "Alerts": "alerts",
+        "Portfolio": "portfolio",
+        "Comparison": "comparison",
         "Settings": "settings",
     }
     page = st.radio("Navigation", list(PAGES.keys()), label_visibility="collapsed")
@@ -877,6 +963,14 @@ elif selected == "results":
     from views.results import render
 elif selected == "history":
     from views.history import render
+elif selected == "news":
+    from views.news import render
+elif selected == "alerts":
+    from views.alerts import render
+elif selected == "portfolio":
+    from views.portfolio import render
+elif selected == "comparison":
+    from views.comparison import render
 elif selected == "settings":
     from views.settings import render
 

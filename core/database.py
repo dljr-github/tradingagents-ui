@@ -65,6 +65,32 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_runs_ticker ON runs(ticker);
             CREATE INDEX IF NOT EXISTS idx_runs_status ON runs(status);
             CREATE INDEX IF NOT EXISTS idx_runs_created ON runs(created_at);
+
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker TEXT NOT NULL,
+                metric TEXT NOT NULL,
+                operator TEXT NOT NULL,
+                threshold REAL NOT NULL,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                triggered_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_alerts_ticker ON alerts(ticker);
+            CREATE INDEX IF NOT EXISTS idx_alerts_enabled ON alerts(enabled);
+
+            CREATE TABLE IF NOT EXISTS positions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticker TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                entry_price REAL NOT NULL,
+                entry_date TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_positions_ticker ON positions(ticker);
         """)
 
 

@@ -56,6 +56,14 @@ def get_ticker_info(ticker: str) -> dict:
 # Cache ticker info to avoid repeated API calls
 _ticker_info_cache: dict[str, dict] = {}
 
+# Cache indicator series for charting (populated by get_quick_stats)
+_indicator_series_cache: dict[str, dict] = {}
+
+
+def get_indicator_series(ticker: str) -> dict:
+    """Return cached indicator series (MACD, Bollinger) for charting."""
+    return _indicator_series_cache.get(ticker, {})
+
 
 def get_ticker_info_cached(ticker: str) -> dict:
     """Cached version of get_ticker_info."""
@@ -88,6 +96,45 @@ def get_quick_stats(ticker: str) -> dict:
         sma50 = hist["Close"].rolling(50).mean().iloc[-1] if len(hist) >= 50 else None
         sma200 = hist["Close"].rolling(200).mean().iloc[-1] if len(hist) >= 200 else None
 
+        # MACD (12, 26, 9)
+        ema12 = hist["Close"].ewm(span=12, adjust=False).mean()
+        ema26 = hist["Close"].ewm(span=26, adjust=False).mean()
+        macd_line = ema12 - ema26
+        signal_line = macd_line.ewm(span=9, adjust=False).mean()
+        macd_histogram = macd_line - signal_line
+
+        macd_val = float(macd_line.iloc[-1]) if pd.notna(macd_line.iloc[-1]) else None
+        signal_val = float(signal_line.iloc[-1]) if pd.notna(signal_line.iloc[-1]) else None
+        histogram_val = float(macd_histogram.iloc[-1]) if pd.notna(macd_histogram.iloc[-1]) else None
+
+        # Bollinger Bands (20, 2)
+        bb_middle = hist["Close"].rolling(20).mean()
+        bb_std = hist["Close"].rolling(20).std()
+        bb_upper = bb_middle + 2 * bb_std
+        bb_lower = bb_middle - 2 * bb_std
+
+        bb_upper_val = float(bb_upper.iloc[-1]) if len(hist) >= 20 and pd.notna(bb_upper.iloc[-1]) else None
+        bb_middle_val = float(bb_middle.iloc[-1]) if len(hist) >= 20 and pd.notna(bb_middle.iloc[-1]) else None
+        bb_lower_val = float(bb_lower.iloc[-1]) if len(hist) >= 20 and pd.notna(bb_lower.iloc[-1]) else None
+
+        # ATR (14-period)
+        high_low = hist["High"] - hist["Low"]
+        high_close = (hist["High"] - hist["Close"].shift()).abs()
+        low_close = (hist["Low"] - hist["Close"].shift()).abs()
+        true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+        atr_series = true_range.rolling(14).mean()
+        atr_val = float(atr_series.iloc[-1]) if len(hist) >= 14 and pd.notna(atr_series.iloc[-1]) else None
+
+        # Store full series for charting
+        _indicator_series_cache[ticker] = {
+            "macd_line": macd_line,
+            "signal_line": signal_line,
+            "macd_histogram": macd_histogram,
+            "bb_upper": bb_upper,
+            "bb_middle": bb_middle,
+            "bb_lower": bb_lower,
+        }
+
         # Get company info
         info = get_ticker_info_cached(ticker)
 
@@ -102,6 +149,13 @@ def get_quick_stats(ticker: str) -> dict:
             "rsi": round(rsi, 1) if rsi and pd.notna(rsi) else None,
             "sma50": round(sma50, 2) if sma50 and pd.notna(sma50) else None,
             "sma200": round(sma200, 2) if sma200 and pd.notna(sma200) else None,
+            "macd_line": round(macd_val, 4) if macd_val is not None else None,
+            "signal_line": round(signal_val, 4) if signal_val is not None else None,
+            "macd_histogram": round(histogram_val, 4) if histogram_val is not None else None,
+            "bb_upper": round(bb_upper_val, 2) if bb_upper_val is not None else None,
+            "bb_middle": round(bb_middle_val, 2) if bb_middle_val is not None else None,
+            "bb_lower": round(bb_lower_val, 2) if bb_lower_val is not None else None,
+            "atr": round(atr_val, 2) if atr_val is not None else None,
         }
     except Exception as e:
         logger.warning("Failed to get stats for %s: %s", ticker, e)
