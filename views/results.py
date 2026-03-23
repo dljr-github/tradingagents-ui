@@ -4,6 +4,7 @@ import json
 
 import streamlit as st
 from core.database import get_run, get_runs
+from views.icons import icon_header
 
 
 RATING_COLORS = {
@@ -16,7 +17,7 @@ RATING_COLORS = {
 
 
 def render():
-    st.header("📋 Analysis Results")
+    st.markdown(icon_header("clipboard", "Analysis Results"), unsafe_allow_html=True)
 
     # Run selector
     run_id = st.session_state.get("view_run_id")
@@ -121,7 +122,7 @@ def _render_debate(debate_json: str | None):
     col_bull, col_bear = st.columns(2)
 
     with col_bull:
-        st.subheader("🟢 Bull Case")
+        st.markdown(icon_header("trending-up", "Bull Case", level=3), unsafe_allow_html=True)
         bull = debate.get("bull_history", "")
         if bull:
             st.markdown(bull)
@@ -129,7 +130,7 @@ def _render_debate(debate_json: str | None):
             st.info("No bull arguments recorded.")
 
     with col_bear:
-        st.subheader("🔴 Bear Case")
+        st.markdown(icon_header("trending-down", "Bear Case", level=3), unsafe_allow_html=True)
         bear = debate.get("bear_history", "")
         if bear:
             st.markdown(bear)
@@ -139,7 +140,7 @@ def _render_debate(debate_json: str | None):
     judge = debate.get("judge_decision", "")
     if judge:
         st.divider()
-        st.subheader("⚖️ Research Manager Verdict")
+        st.markdown(icon_header("scale", "Research Manager Verdict", level=3), unsafe_allow_html=True)
         st.markdown(judge)
 
 
@@ -157,21 +158,21 @@ def _render_risk(risk_json: str | None):
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.subheader("🔥 Aggressive")
+        st.markdown(icon_header("flame", "Aggressive", level=3), unsafe_allow_html=True)
         st.markdown(risk.get("aggressive_history", "") or "N/A")
 
     with col2:
-        st.subheader("🛡️ Conservative")
+        st.markdown(icon_header("shield", "Conservative", level=3), unsafe_allow_html=True)
         st.markdown(risk.get("conservative_history", "") or "N/A")
 
     with col3:
-        st.subheader("⚖️ Neutral")
+        st.markdown(icon_header("scale", "Neutral", level=3), unsafe_allow_html=True)
         st.markdown(risk.get("neutral_history", "") or "N/A")
 
     judge = risk.get("judge_decision", "")
     if judge:
         st.divider()
-        st.subheader("📋 Risk Assessment Verdict")
+        st.markdown(icon_header("clipboard", "Risk Assessment Verdict", level=3), unsafe_allow_html=True)
         st.markdown(judge)
 
 

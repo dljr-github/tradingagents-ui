@@ -8,12 +8,11 @@ init_db()
 
 st.set_page_config(
     page_title="TradingAgents",
-    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Minimal custom CSS
+# Custom CSS
 st.markdown("""
 <style>
     .rating-buy { color: #00d26a; font-weight: bold; }
@@ -26,13 +25,13 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Navigation
+# Navigation — plain text labels (no emojis)
 PAGES = {
-    "📊 Screener": "screener",
-    "🤖 Analysis": "analysis",
-    "📋 Results": "results",
-    "📈 History": "history",
-    "⚙️ Settings": "settings",
+    "Screener": "screener",
+    "Analysis": "analysis",
+    "Results": "results",
+    "History": "history",
+    "Settings": "settings",
 }
 
 with st.sidebar:
@@ -44,14 +43,14 @@ with st.sidebar:
 
 # Import and render selected page
 if selected == "screener":
-    from pages.screener import render
+    from views.screener import render
 elif selected == "analysis":
-    from pages.analysis import render
+    from views.analysis import render
 elif selected == "results":
-    from pages.results import render
+    from views.results import render
 elif selected == "history":
-    from pages.history import render
+    from views.history import render
 elif selected == "settings":
-    from pages.settings import render
+    from views.settings import render
 
 render()

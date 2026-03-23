@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 from core.database import get_run, get_runs
 from core.screener_data import get_ticker_price
+from views.icons import icon_header
 
 
 RATING_COLORS = {
@@ -19,7 +20,7 @@ RATING_COLORS = {
 
 
 def render():
-    st.header("📈 History")
+    st.markdown(icon_header("clock", "History"), unsafe_allow_html=True)
 
     # Filters
     with st.expander("Filters", expanded=True):
@@ -151,14 +152,14 @@ def _render_accuracy(runs: list[dict]):
             "Price Then": f"${analysis_price}",
             "Price Now": f"${current_price}",
             "Change": f"{price_change_pct:+.2f}%",
-            "Correct": "✅" if correct else "❌",
+            "Correct": "Yes" if correct else "No",
         })
 
     if accuracy_rows:
         df = pd.DataFrame(accuracy_rows)
         st.dataframe(df, use_container_width=True, hide_index=True)
 
-        correct_count = sum(1 for r in accuracy_rows if r["Correct"] == "✅")
+        correct_count = sum(1 for r in accuracy_rows if r["Correct"] == "Yes")
         total = len(accuracy_rows)
         st.metric("Accuracy", f"{correct_count}/{total} ({correct_count/total*100:.0f}%)")
     else:

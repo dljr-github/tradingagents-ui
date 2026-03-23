@@ -2,10 +2,11 @@
 
 import streamlit as st
 from core.config import load_config, save_config
+from views.icons import icon_header
 
 
 def render():
-    st.header("⚙️ Settings")
+    st.markdown(icon_header("gear", "Settings"), unsafe_allow_html=True)
 
     cfg = load_config()
 

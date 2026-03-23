@@ -7,6 +7,7 @@ import streamlit as st
 from core.config import load_config
 from core.database import get_active_runs, get_run
 from core.runner import get_runner, read_progress
+from views.icons import icon_header
 
 # Expected steps in order for progress bar
 ALL_STEPS = [
@@ -17,7 +18,7 @@ ALL_STEPS = [
 
 
 def render():
-    st.header("🤖 Analysis")
+    st.markdown(icon_header("cpu", "Analysis"), unsafe_allow_html=True)
 
     tab_active, tab_new = st.tabs(["Active Runs", "New Analysis"])
 
@@ -75,21 +76,21 @@ def _render_active_runs():
                 status = prog.get("status", "running")
 
                 if status == "completed":
-                    st.progress(1.0, text=f"✅ Completed — Rating: {prog.get('rating', 'N/A')}")
+                    st.progress(1.0, text=f"Completed — Rating: {prog.get('rating', 'N/A')}")
                 elif status == "failed":
-                    st.error(f"❌ Failed: {prog.get('error', 'Unknown error')}")
+                    st.error(f"Failed: {prog.get('error', 'Unknown error')}")
                 elif status == "cancelled":
-                    st.warning("🚫 Cancelled")
+                    st.warning("Cancelled")
                 else:
-                    st.progress(min(fraction, 0.99), text=f"⏳ {current} ({fraction:.0%})")
+                    st.progress(min(fraction, 0.99), text=f"{current} ({fraction:.0%})")
 
                 # Step timeline
                 if steps_done:
                     with st.expander("Step Details"):
                         for step in steps_done:
-                            st.text(f"✅ {step['name']}")
+                            st.text(f"  {step['name']}")
                         if status == "running" and current not in step_names_done:
-                            st.text(f"⏳ {current}...")
+                            st.text(f"  {current}...")
             elif run["status"] == "pending":
                 st.progress(0.0, text="Waiting to start...")
 
@@ -153,7 +154,7 @@ def _render_new_analysis():
                 value=analysis_cfg.get("max_risk_discuss_rounds", 1),
             )
 
-        submitted = st.form_submit_button("🚀 Start Analysis", use_container_width=True)
+        submitted = st.form_submit_button("Start Analysis", use_container_width=True)
 
     if submitted:
         if not ticker:

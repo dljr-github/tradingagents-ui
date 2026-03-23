@@ -4,6 +4,7 @@ import streamlit as st
 from core.screener_data import get_quick_stats, get_sector_performance, get_top_movers
 from core.database import add_to_watchlist, get_watchlist, is_in_watchlist, remove_from_watchlist
 from core.runner import get_runner
+from views.icons import icon_header
 
 
 def _rating_color(change_pct: float) -> str:
@@ -24,7 +25,7 @@ def _queue_analysis(ticker: str):
 
 
 def render():
-    st.header("📊 Stock Screener")
+    st.markdown(icon_header("chart", "Stock Screener"), unsafe_allow_html=True)
 
     # Quick ticker lookup
     col1, col2, col3 = st.columns([3, 1, 1])
@@ -56,7 +57,7 @@ def render():
             c4.metric("SMA 50", f"${stats['sma50']}" if stats['sma50'] else "N/A")
             c5.metric("SMA 200", f"${stats['sma200']}" if stats['sma200'] else "N/A")
 
-            if st.button(f"🤖 Analyze {lookup_ticker.upper()}", key="analyze_lookup"):
+            if st.button(f"Analyze {lookup_ticker.upper()}", key="analyze_lookup"):
                 _queue_analysis(lookup_ticker.strip().upper())
                 st.success(f"Analysis queued for {lookup_ticker.upper()}! Go to Analysis page to monitor.")
         else:
@@ -92,35 +93,35 @@ def _render_top_movers():
     col_gain, col_lose, col_vol = st.columns(3)
 
     with col_gain:
-        st.subheader("🟢 Top Gainers")
+        st.markdown(icon_header("trending-up", "Top Gainers", level=3), unsafe_allow_html=True)
         for item in movers.get("gainers", []):
             with st.container():
                 c1, c2, c3 = st.columns([2, 2, 1])
                 c1.markdown(f"**{item['ticker']}**")
                 c2.markdown(f"${item['price']} ({item['change_pct']:+.2f}%)")
-                if c3.button("🤖", key=f"analyze_g_{item['ticker']}", help=f"Analyze {item['ticker']}"):
+                if c3.button("Analyze", key=f"analyze_g_{item['ticker']}", help=f"Analyze {item['ticker']}"):
                     _queue_analysis(item["ticker"])
                     st.toast(f"Analysis queued for {item['ticker']}")
 
     with col_lose:
-        st.subheader("🔴 Top Losers")
+        st.markdown(icon_header("trending-down", "Top Losers", level=3), unsafe_allow_html=True)
         for item in movers.get("losers", []):
             with st.container():
                 c1, c2, c3 = st.columns([2, 2, 1])
                 c1.markdown(f"**{item['ticker']}**")
                 c2.markdown(f"${item['price']} ({item['change_pct']:+.2f}%)")
-                if c3.button("🤖", key=f"analyze_l_{item['ticker']}", help=f"Analyze {item['ticker']}"):
+                if c3.button("Analyze", key=f"analyze_l_{item['ticker']}", help=f"Analyze {item['ticker']}"):
                     _queue_analysis(item["ticker"])
                     st.toast(f"Analysis queued for {item['ticker']}")
 
     with col_vol:
-        st.subheader("📊 Volume Spikes")
+        st.markdown(icon_header("bar-chart", "Volume Spikes", level=3), unsafe_allow_html=True)
         for item in movers.get("volume", []):
             with st.container():
                 c1, c2, c3 = st.columns([2, 2, 1])
                 c1.markdown(f"**{item['ticker']}**")
                 c2.markdown(f"{item['vol_ratio']:.1f}x avg vol")
-                if c3.button("🤖", key=f"analyze_v_{item['ticker']}", help=f"Analyze {item['ticker']}"):
+                if c3.button("Analyze", key=f"analyze_v_{item['ticker']}", help=f"Analyze {item['ticker']}"):
                     _queue_analysis(item["ticker"])
                     st.toast(f"Analysis queued for {item['ticker']}")
 
@@ -160,15 +161,14 @@ def _render_watchlist():
         st.info("Your watchlist is empty. Add tickers using the search above.")
         return
 
-    # Add notes
     for item in wl:
         with st.container():
             c1, c2, c3, c4 = st.columns([2, 3, 1, 1])
             c1.markdown(f"**{item['ticker']}**")
             c2.caption(item.get("notes") or "")
-            if c3.button("🤖", key=f"analyze_wl_{item['ticker']}", help=f"Analyze {item['ticker']}"):
+            if c3.button("Analyze", key=f"analyze_wl_{item['ticker']}", help=f"Analyze {item['ticker']}"):
                 _queue_analysis(item["ticker"])
                 st.toast(f"Analysis queued for {item['ticker']}")
-            if c4.button("❌", key=f"remove_wl_{item['ticker']}", help="Remove"):
+            if c4.button("Remove", key=f"remove_wl_{item['ticker']}", help="Remove from watchlist"):
                 remove_from_watchlist(item["ticker"])
                 st.rerun()
