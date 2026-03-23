@@ -14,6 +14,24 @@ from core.progress import progress_tracker
 
 logger = logging.getLogger(__name__)
 
+# Valid ratings in priority order
+VALID_RATINGS = ["STRONG BUY", "BUY", "OVERWEIGHT", "HOLD", "UNDERWEIGHT", "SELL", "STRONG SELL"]
+
+
+def _extract_rating(text: str) -> str:
+    """Extract rating from analysis text without requiring an LLM call."""
+    text_upper = text.upper()
+    # Check for each rating keyword in the text
+    for rating in VALID_RATINGS:
+        if rating in text_upper:
+            return rating
+    # Fallback: look for common patterns
+    import re
+    match = re.search(r"(?:rating|recommendation|decision|signal)[:\s]*(BUY|SELL|HOLD|OVERWEIGHT|UNDERWEIGHT)", text_upper)
+    if match:
+        return match.group(1)
+    return "HOLD"
+
 # Directory for progress IPC files
 PROGRESS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".progress")
 os.makedirs(PROGRESS_DIR, exist_ok=True)
@@ -145,11 +163,9 @@ def _run_analysis_worker(
         # Get final state from last chunk
         final_state = chunk
 
-        # Extract rating
+        # Extract rating from final decision text
         decision = final_state.get("final_trade_decision", "")
-        from tradingagents.graph.signal_processing import SignalProcessor
-        processor = SignalProcessor(None)
-        rating = processor.process_signal(decision).strip().upper() if decision else "HOLD"
+        rating = _extract_rating(decision) if decision else "HOLD"
 
         complete_run(run_id, rating, final_state)
         _write_progress(run_id, {
