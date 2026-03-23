@@ -108,7 +108,7 @@ Discover stocks → Analyze with AI agents → Review decisions → Track histor
 
 ## Analysis Runner
 
-- Uses `concurrent.futures.ThreadPoolExecutor` for parallel runs
+- Uses `multiprocessing.Process` for parallel runs (avoids GIL)
 - Each run gets a unique ID, stored in SQLite with status updates
 - Custom LangGraph callback captures progress per node
 - Progress stored in a shared dict (thread-safe) for Streamlit to poll

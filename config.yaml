@@ -1,0 +1,21 @@
+llm:
+  provider: claude_cli
+  quick_think_model: claude-sonnet-4-6
+  deep_think_model: claude-opus-4-6
+  claude_cli_path: ~/.local/bin/claude
+  claude_cli_timeout: 300
+
+data:
+  core_stock_apis: yfinance
+  technical_indicators: yfinance
+  fundamental_data: yfinance
+  news_data: yfinance
+
+analysis:
+  default_analysts:
+    - market
+    - social
+    - news
+    - fundamentals
+  max_debate_rounds: 1
+  max_risk_discuss_rounds: 1

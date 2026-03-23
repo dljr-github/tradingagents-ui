@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "tradingagents-ui"
+version = "0.1.0"
+description = "Streamlit-based trading workstation wrapping the TradingAgents framework"
+requires-python = ">=3.13"
+dependencies = [
+    "streamlit>=1.45.0",
+    "yfinance>=0.2.63",
+    "pandas>=2.3.0",
+    "pyyaml>=6.0",
+    "tradingagents @ file:///home/darrell/openclaw/projects/trading-agents",
+]
+
+[project.scripts]
+tradingagents-ui = "app:main"
